@@ -122,6 +122,14 @@ node src/cli.mjs inspect --input ./exports/my-game
 
 提交问题时请附上工具与基础库版本、Construct 版本、构建报告、最小复现步骤、第一条错误及平台类别。移除临时登录 code、用户输入、个人存储内容和项目私有凭据。已验收与待验收项目见[验证记录](../validation/)。
 
+## TikTok 启动报 offWindowResize is required
+
+旧版适配层要求内部事件同时提供 `on...` 和 `off...`。用户提供的 TikTok iOS 真机错误表明，该宿主暴露了 `onWindowResize`，却没有 `offWindowResize`，因此旧产物会在安装适配层时中止。
+
+更新源码并重新转换 HTML5 导出。修复后的 TikTok 适配层在存在 `on...`、缺少 `off...` 时使用共享事件分发器；释放适配层会移除自己的本地回调，重复安装复用同一个原生监听，不影响其他调用方。有对应 `off...` 时仍使用原生撤销。此兼容逻辑覆盖启动过程的窗口、输入、前后台和网络监听，不会添加假的原生方法，也不扩展公开 API 目录。
+
+已通过缺失 off 接口的启动、窗口更新、释放、重装和完整打包夹具回归；修复后的 TikTok 真机首帧仍待验证。原生接口范围请分别参考 TikTok 官方 [Event](https://developers.tiktok.com/docs/en/mini-games-sdk-event) 和 [Device and Network](https://developers.tiktok.com/docs/en/mini-games-sdk-device-and-network)，不要从微信或抖音同名方法推断。
+
 ## TikTok 检测不到宿主或支付没有发货
 
 确认运行目标为 TikTok Native Mini Games，并选择 `tiktok` 平台。TikTok 的命名空间是 `TTMinis.game`，不能把抖音 `tt` 注入或重命名来模拟通过。原生 runtime 不需要 `TTMinis.game.init()`；HTML runtime 的 SDK 加载流程不适用于原生转换产物。

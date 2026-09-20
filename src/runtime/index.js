@@ -1,3 +1,4 @@
+import {subscribeSharedEvent} from './native-events.js';
 import {MiniEvent, MiniEventTarget, attachEvents, requireMethod} from './events.js';
 import {createNetwork, MiniHeaders, MiniResponse, resolveAssetPath} from './network.js';
 import {createPlatformBridge} from './bridge.js';
@@ -110,8 +111,16 @@ export function installAdapter({platform = 'douyin', host = globalThis, api = pl
   };
   const subscribe = (on, off, handler) => {
     if (typeof api[on] !== 'function') return false;
-    if (typeof api[off] !== 'function') throw new Error(`${off} is required to install a disposable adapter`);
-    api[on](handler); nativeSubscriptions.push(() => api[off](handler)); return true;
+    if (typeof api[off] !== 'function') {
+      if (platform !== 'tiktok') throw new Error(`${off} is required to install a disposable adapter`);
+      // Some TikTok Native versions expose onWindowResize without an off method.
+      // Keep one dispatcher per API/event; disposal releases only our callback,
+      // and reinstalling does not accumulate native listeners or retain old DOMs.
+      nativeSubscriptions.push(subscribeSharedEvent(api, {name: on}, handler));
+      return true;
+    }
+    // Register rollback before native on: a host can attach, then throw.
+    nativeSubscriptions.push(() => api[off](handler)); api[on](handler); return true;
   };
   const windowEvents = new MiniEventTarget();
   const readViewport = () => ({width: host.innerWidth ?? cssWidth, height: host.innerHeight ?? cssHeight});
