@@ -5,11 +5,11 @@
  */
 export function createEngineScope(nativeHost, {platform = 'douyin', api, nativeBindings = {}} = {}) {
   if (!nativeHost || (typeof nativeHost !== 'object' && typeof nativeHost !== 'function')) throw new TypeError('A native host object is required');
-  if (platform !== 'douyin' && platform !== 'wechat') throw new Error(`Unsupported platform: ${platform}`);
+  if (!['douyin', 'wechat', 'tiktok'].includes(platform)) throw new Error(`Unsupported platform: ${platform}`);
   const ownsBinding = name => Object.prototype.hasOwnProperty.call(nativeBindings, name);
   const readNative = name => ownsBinding(name) ? nativeBindings[name] : nativeHost[name];
-  const apiName = platform === 'douyin' ? 'tt' : 'wx';
-  const platformAPI = api || readNative(apiName);
+  const apiName = platform === 'tiktok' ? 'TTMinis.game' : platform === 'douyin' ? 'tt' : 'wx';
+  const platformAPI = api || (platform === 'tiktok' ? readNative('TTMinis')?.game : readNative(apiName));
   if (!platformAPI || typeof platformAPI.createCanvas !== 'function') throw new Error(`Missing ${apiName} mini-game API`);
   const scope = Object.create(null);
   // Browser DOM, events, network, storage, workers and audio are deliberately absent:
@@ -38,9 +38,12 @@ export function createEngineScope(nativeHost, {platform = 'douyin', api, nativeB
   for (const name of ['console', 'performance', 'crypto']) {
     if (readNative(name) !== undefined) scope[name] = readNative(name);
   }
-  scope[apiName] = platformAPI;
+  // TikTok Native provides TTMinis.game directly; it is not an alias for tt.
+  // Keep this resolver self-contained because the compiler embeds this function.
+  if (platform === 'tiktok') scope.TTMinis = Object.freeze({game: platformAPI});
+  else scope[apiName] = platformAPI;
   // Real platform wasm variants remain separate; their signatures need platform-specific handling.
-  for (const name of ['WXWebAssembly', 'TTWebAssembly']) {
+  for (const name of platform === 'tiktok' ? [] : ['WXWebAssembly', 'TTWebAssembly']) {
     if (readNative(name) !== undefined) scope[name] = readNative(name);
   }
   scope.globalThis = scope;

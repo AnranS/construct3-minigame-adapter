@@ -1,6 +1,6 @@
 # MiniGameBridge 插件接入
 
-MiniGameBridge 是 Construct SDK v2 单例对象插件，固定插件 ID 为 `C3MiniGameBridge`。当前包版本为 **0.2.0.0**，与适配工具版本 0.2.0 对应。插件提供 **19 个动作、11 个条件、14 个表达式**，也可以在 Construct JavaScript 脚本中调用。
+MiniGameBridge 是 Construct SDK v2 单例对象插件，固定插件 ID 为 `C3MiniGameBridge`。当前适配工具版本为 **{{VERSION}}**，插件 manifest 使用 Construct 要求的四段版本号。插件提供 **19 个动作、11 个条件、14 个表达式**，也可以在 Construct JavaScript 脚本中调用。
 
 先按[快速开始](../guide/)安装 `.c3addon`、添加对象并完成小游戏转换。插件声明不支持 Worker 模式；转换器负责安装运行时桥接，插件负责把事件表和脚本调用交给它。
 
@@ -20,7 +20,7 @@ MiniGameBridge → On error
   通用调用还可读取 LastAPIName、LastAPITag
 ```
 
-缺少小游戏桥接时返回 `UNSUPPORTED`；未初始化时返回 `NOT_READY`。插件不会在初始化过程中自动登录、读取剪贴板、申请权限或展示广告。
+缺少小游戏桥接时返回 `UNSUPPORTED`；未初始化时返回 `NOT_READY`。插件不会在初始化过程中自动登录、读取剪贴板、申请权限或展示广告。Platform 属性按 Auto-detect、Douyin、WeChat、TikTok 排列，TikTok 追加在索引 3，已有工程的选择不变。TikTok 使用 `TTMinis.game`，不映射到抖音 `tt`；原生 SDK 无需 init，插件 Init 只初始化适配器。
 
 所有事件表动作都支持 Construct 的 **Wait for previous actions to complete**。其中 **Read synchronous API** 仍然立即调用原生同步接口；动作支持等待并不改变原生接口种类。
 
@@ -95,7 +95,7 @@ MiniGameBridge → On API event("keyboard")
     Tag: "keyboard"
 ```
 
-同一个事件名和 tag 再次订阅会替换原订阅；不同 tag 独立存在。事件订阅要求宿主的 `on...` 和对应 `off...` 都可用。插件实例释放或加载存档时会清理本实例订阅，不释放共享桥接或其他实例的资源。
+同一个事件名和 tag 再次订阅会替换原订阅；不同 tag 独立存在。普通事件订阅要求宿主的 `on...` 和对应 `off...` 都可用。目录明确登记的全量 off / 无 off 特例只停用本订阅回调，不清除其他监听，也不宣称原生监听已经移除。插件实例释放或加载存档时会清理本实例订阅，不释放共享桥接或其他实例的资源。
 
 ## 常用快捷动作
 
@@ -107,7 +107,7 @@ MiniGameBridge → On API event("keyboard")
 | Write / Read / Remove storage | 调用原生异步存储；写入值可为任意 JSON 值 |
 | Get network type | 读取网络类型 |
 | Write / Read clipboard | 调用原生剪贴板接口 |
-| Show / Hide keyboard | 显示或隐藏原生键盘，输入内容从键盘事件接收 |
+| Show / Hide keyboard | 显示或隐藏原生键盘，输入内容从键盘事件接收；微信与 TikTok 显式传 `keyboardType: "text"` |
 | Login | 获取临时登录 code，触发 On login succeeded |
 | Show rewarded video | 仅完整观看触发 On ad completed，其他关闭结果触发 On ad cancelled |
 | Report score | 请求配置的 HTTPS 成绩服务，成功触发 On score reported |
@@ -252,3 +252,11 @@ if (bridge.supportsAPI("createInnerAudioContext")) {
 | `CALLBACK_ERROR` | 项目提供的事件处理函数是否抛错 |
 
 当前微信 IDE 的 Modal 还有已知 Worker 错误，原生回调正常不代表该问题已解决。操作步骤和验收边界见[问题排查](../troubleshooting/)与[验证记录](../validation/)。
+
+## TikTok 支付使用已有 Call API
+
+事件表调用 `pay`，Options JSON 包含自己后端创建的 `trade_order_id`，例如 `{"trade_order_id":"backend-created-order"}`，tag 可设为 `purchase-panel`。这串示例 ID 不是可支付订单；真实值必须由你的后端返回。
+
+**On API succeeded("purchase-panel") 只表示客户端支付流程回调成功，不表示可以发货。** 接着查询自己的已鉴权后端，等待其完成 Webhook 验签、订单核对和幂等发货，再刷新游戏资产。支付回调没有 JSON 数据时，`LastResultIsJSON` 为 0 也不是支付失败。
+
+原生支付取消或失败后，新一次购买要重新创建订单，不自动重试旧订单。轮询超时保留 pending，支持玩家稍后查询。`globalThis.C3MiniGameBridge.pay()` 是带明确 `fulfillment: "unconfirmed"` 结果的运行时辅助接口，不是插件实例方法。完整流程与服务器辅助工具见 [TikTok 支付](../tiktok-iap/)。TikTok IDE、真机及真实支付尚未验证。

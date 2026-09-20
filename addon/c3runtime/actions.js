@@ -18,6 +18,6 @@ globalThis.C3.Plugins.C3MiniGameBridge.Acts = {
 	async GetNetworkType(tag) { try { await this._callAPIFromOptions("getNetworkType", () => ({}), tag); } catch {} },
 	async SetClipboard(text, tag) { try { await this._callAPIFromOptions("setClipboardData", () => ({ data: text }), tag); } catch {} },
 	async GetClipboard(tag) { try { await this._callAPIFromOptions("getClipboardData", () => ({}), tag); } catch {} },
-	async ShowKeyboard(value, maxLength, tag) { try { await this._callAPIFromOptions("showKeyboard", () => ({ defaultValue: value, maxLength, multiple: false, confirmHold: false, confirmType: "done" }), tag); } catch {} },
+	async ShowKeyboard(value, maxLength, tag) { try { await this._callAPIFromOptions("showKeyboard", () => ({ defaultValue: value, maxLength, multiple: false, confirmHold: false, confirmType: "done", ...(["wechat", "tiktok"].includes(this.getPlatform()) ? { keyboardType: "text" } : {}) }), tag); } catch {} },
 	async HideKeyboard(tag) { try { await this._callAPIFromOptions("hideKeyboard", () => ({}), tag); } catch {} }
 };

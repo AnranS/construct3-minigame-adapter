@@ -1,4 +1,4 @@
-const PLATFORMS = ["auto", "douyin", "wechat"];
+const PLATFORMS = ["auto", "douyin", "wechat", "tiktok"];
 
 function bridgeError(code, message)
 {
@@ -201,7 +201,7 @@ globalThis.C3.Plugins.C3MiniGameBridge.Instance = class MiniGameBridgeInstance e
 			if (this._disposed)
 				throw bridgeError("DISPOSED", "MiniGameBridge instance was released during initialization.");
 			const platform = typeof bridge.getPlatform === "function" ? bridge.getPlatform() : "unsupported";
-			if (platform !== "douyin" && platform !== "wechat")
+			if (platform !== "douyin" && platform !== "wechat" && platform !== "tiktok")
 				throw bridgeError("UNSUPPORTED", "Initialization did not identify a supported mini game host.");
 			this._ready = true;
 			return result;

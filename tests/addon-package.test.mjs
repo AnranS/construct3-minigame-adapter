@@ -25,7 +25,8 @@ test("addon metadata, ACEs and language validate against the official SDK schema
   const metadata = await json("addon.json");
   assert.equal(metadata["sdk-version"], 2);
   assert.equal(metadata["supports-worker-mode"], false);
-  assert.equal(metadata.version, "0.2.0.0");
+  const packageVersion = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8")).version;
+  assert.equal(metadata.version, `${packageVersion}.0`);
   const language = (await json("lang/en-US.json")).text.plugins.c3minigamebridge;
   const aces = (await json("aces.json")).bridge;
   for (const section of ["conditions", "actions", "expressions"]) {
@@ -86,7 +87,7 @@ test("editor scripts register a single-global plugin with matching properties an
   assert.equal(info.SetIsSingleGlobal, true);
   assert.equal(info.SetRuntimeModuleMainScript, "c3runtime/main.js");
   assert.deepEqual(Array.from(info.SetProperties, property => property.id), ["platform", "score-endpoint"]);
-  assert.deepEqual(Array.from(info.SetProperties[0].options.items), ["auto", "douyin", "wechat"]);
+  assert.deepEqual(Array.from(info.SetProperties[0].options.items), ["auto", "douyin", "wechat", "tiktok"]);
   assert.equal(contexts.length, 0);
   assert.equal(info.AddFileDependency, undefined, "must not inject the mini game adapter as a DOM script");
 });

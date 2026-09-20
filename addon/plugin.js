@@ -17,7 +17,7 @@ const PLUGIN_CLASS = SDK.Plugins.C3MiniGameBridge = class MiniGameBridge extends
 		SDK.Lang.PushContext(".properties");
 		this._info.SetProperties([
 			new SDK.PluginProperty("combo", "platform", {
-				initialValue: "auto", items: ["auto", "douyin", "wechat"]
+				initialValue: "auto", items: ["auto", "douyin", "wechat", "tiktok"]
 			}),
 			new SDK.PluginProperty("text", "score-endpoint", "")
 		]);

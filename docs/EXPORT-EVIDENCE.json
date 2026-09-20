@@ -601,5 +601,227 @@
       "archivedProject": "examples/construct/archive/WeChatApiDemo-0.1.c3p",
       "archivedHTML5Archive": "examples/construct/archive/WeChatApiDemo-0.1-html5.zip"
     }
+  },
+  "legacyTopLevelSnapshotVersion": "0.2.0",
+  "currentRelease": "0.3.0",
+  "recordScope": "Top-level legacy fields describe the 0.2.0 historical snapshot; current 0.3.0 evidence is under releases[\"0.3.0\"]. Historical success does not verify the current release.",
+  "releases": {
+    "0.3.0": {
+      "version": "0.3.0",
+      "constructVersion": "r495.2",
+      "recordedOn": "2026-09-20",
+      "editorExportComplete": true,
+      "editorEvidence": "The actual Construct r495.2 editor completed a new HTML5 export of the updated MiniGameApiSuite; exported project main bytes match the project source.",
+      "sourceProject": {
+        "path": "examples/construct/MiniGameApiSuite.c3p",
+        "bytes": 231945,
+        "sha256": "504baca7c7a64ac1a3994a0452e761ac9c458cf3e4d93d7d23d62443c2b9c4ac"
+      },
+      "projectMetadataCorrection": {
+        "field": "properties.version",
+        "before": "0.2.0.0",
+        "after": "0.3.0.0",
+        "usedAddonVersion": "0.3.0.0",
+        "otherArchiveEntriesUnchanged": 24,
+        "note": "Only the project version metadata was corrected after the real export. Project JavaScript and all other ZIP entries remained byte-identical."
+      },
+      "html5Archive": {
+        "path": "examples/construct/MiniGameApiSuite-html5.zip",
+        "bytes": 584030,
+        "sha256": "9a00976f65288906b02716175019f5d5c09f3bcff257ec940b34ea44bdbf3f66",
+        "fileCount": 28,
+        "extractedFilesByteIdentical": true
+      },
+      "extractedSource": "examples/construct/api-demo-html5",
+      "projectMainSource": {
+        "path": "examples/construct/api-demo-main.js",
+        "bytes": 43104,
+        "sha256": "4a215fb1ed3a77c7a2ebc67511735f2111086ca11225037673c7954fd8922c9c"
+      },
+      "exportedProjectMain": {
+        "path": "examples/construct/api-demo-html5/scripts/project/main.js",
+        "bytes": 43104,
+        "sha256": "4a215fb1ed3a77c7a2ebc67511735f2111086ca11225037673c7954fd8922c9c"
+      },
+      "projectMainMatches": true,
+      "automatedTests": {
+        "command": "npm test",
+        "passed": 255,
+        "failed": 0,
+        "scope": "Local regression with the locally retained historical engine file; not physical-device or real-payment validation.",
+        "skipped": 0
+      },
+      "demo": {
+        "wechat": {
+          "featureEntries": 53,
+          "categories": 12
+        },
+        "douyin": {
+          "featureEntries": 53,
+          "categories": 12
+        },
+        "tiktok": {
+          "featureEntries": 57,
+          "categories": 13
+        },
+        "paymentEntriesInvokeRealPayment": false
+      },
+      "builds": {
+        "wechat": {
+          "built": true,
+          "generatedAt": "2026-09-20T09:18:22.150Z",
+          "sourceFormat": "construct-modern",
+          "validation": "build-only-not-device-verified",
+          "deviceVerified": false,
+          "entry": {
+            "path": "dist/construct-wechat/game.js",
+            "bytes": 2495019,
+            "sha256": "4f655ce40111c098f000871e2b57ab653c8982cfabfdd32bdd4baa315f36e4b5"
+          },
+          "buildReport": {
+            "path": "dist/construct-wechat/BUILD-REPORT.json",
+            "bytes": 2590,
+            "sha256": "b80b30b6fd9719be699bc7e444d90b3058a3efc7bf8851a379851920f787e40b"
+          },
+          "preservedLocalConfig": [
+            "appid",
+            "libVersion"
+          ],
+          "localConfigRetentionVerified": {
+            "hasAppId": true,
+            "libVersion": "3.15.3",
+            "scope": "Only configuration presence and base-library version are recorded; the local AppID value is not published."
+          }
+        },
+        "douyin": {
+          "built": true,
+          "generatedAt": "2026-09-20T09:18:22.811Z",
+          "sourceFormat": "construct-modern",
+          "validation": "build-only-not-device-verified",
+          "deviceVerified": false,
+          "entry": {
+            "path": "dist/construct-douyin/game.js",
+            "bytes": 2495019,
+            "sha256": "ed59fe1d8c70265082b474b405692c0e2acb7514e8fdbd24276ee316a088d2d2"
+          },
+          "buildReport": {
+            "path": "dist/construct-douyin/BUILD-REPORT.json",
+            "bytes": 2573,
+            "sha256": "3485dfa8f7c5ef27ff3e737f258692c1adb9d0ccff8197fa9f5cee1cbb799cf9"
+          },
+          "preservedLocalConfig": [
+            "appid"
+          ]
+        },
+        "tiktok": {
+          "built": true,
+          "generatedAt": "2026-09-20T09:18:23.427Z",
+          "sourceFormat": "construct-modern",
+          "validation": "build-only-not-device-verified",
+          "deviceVerified": false,
+          "entry": {
+            "path": "dist/construct-tiktok/game.js",
+            "bytes": 2495004,
+            "sha256": "8d5148c9553704d76519a18ea54b1f530530f23854d9dda45bae15058d6bf825"
+          },
+          "buildReport": {
+            "path": "dist/construct-tiktok/BUILD-REPORT.json",
+            "bytes": 4317,
+            "sha256": "6c3681230d9568e84e1d42b46de97ddb70ec4041fb304549d4247e36824ff44b"
+          },
+          "preservedLocalConfig": [
+            "appid"
+          ]
+        }
+      },
+      "wechatIDE": {
+        "status": "startup-render-and-category-navigation-verified",
+        "verified": true,
+        "version": "RC 2.02.2607161",
+        "actualBaseLibraryVersion": "3.15.3",
+        "simulatorProfile": "iPhone 12/13 Pro",
+        "renderer": "WebGL2",
+        "runtimeReadyObserved": true,
+        "startupErrors": 0,
+        "startupWarnings": 2,
+        "startupCountsAreLimitedToStartup": true,
+        "visibleFeatureEntries": 53,
+        "categoryOpenVerified": true,
+        "backNavigationVerified": true,
+        "selfChecks": {
+          "status": "not-run-on-0.3.0",
+          "inheritedFrom020": false
+        },
+        "paymentDemoButtons": {
+          "status": "not-clicked-on-0.3.0",
+          "realPaymentTested": false
+        },
+        "modal": {
+          "retestedOn030": false,
+          "historicalKnownError": "worker path empty"
+        },
+        "projectConfiguration": "The local existing mini-game test AppID was configured and the project reopened. No personal AppID is published."
+      },
+      "douyinIDE": {
+        "status": "not-run",
+        "verified": false
+      },
+      "tiktokIDE": {
+        "status": "not-run",
+        "verified": false
+      },
+      "physicalDevicesVerified": false,
+      "realPaymentsVerified": false,
+      "publicDistribution": "Source, addon and c3p only. Construct HTML5 engine archives, extracted files and bundled engine outputs remain local and are not published.",
+      "addonRuntime": {
+        "allFilesByteIdentical": true,
+        "fileCount": 7,
+        "files": [
+          {
+            "source": "addon/c3runtime/actions.js",
+            "exported": "examples/construct/api-demo-html5/scripts/plugins/C3MiniGameBridge/c3runtime/actions.js",
+            "bytes": 2484,
+            "sha256": "c35f190018424cf9262c90f2f7bf0496d04d6b7f4b5a00578b9efd4179c9c9e3"
+          },
+          {
+            "source": "addon/c3runtime/conditions.js",
+            "exported": "examples/construct/api-demo-html5/scripts/plugins/C3MiniGameBridge/c3runtime/conditions.js",
+            "bytes": 503,
+            "sha256": "97785c5bf3fddceb232b17290cd6802a99f3393983dcc391bae4e280657149b0"
+          },
+          {
+            "source": "addon/c3runtime/expressions.js",
+            "exported": "examples/construct/api-demo-html5/scripts/plugins/C3MiniGameBridge/c3runtime/expressions.js",
+            "bytes": 814,
+            "sha256": "f3af90fb2ba7512258717952242c8882022f3361721fe86b0f64c9185d8ebab5"
+          },
+          {
+            "source": "addon/c3runtime/instance.js",
+            "exported": "examples/construct/api-demo-html5/scripts/plugins/C3MiniGameBridge/c3runtime/instance.js",
+            "bytes": 17205,
+            "sha256": "e475a7c6a44bef1e7ed604ca2cd8dc2a73198f17810bee48a80a2dd7df541956"
+          },
+          {
+            "source": "addon/c3runtime/main.js",
+            "exported": "examples/construct/api-demo-html5/scripts/plugins/C3MiniGameBridge/c3runtime/main.js",
+            "bytes": 142,
+            "sha256": "da68d013d4b03bbccf49c2a271415459f1d02bdda15fe77ffb27f15312435dce"
+          },
+          {
+            "source": "addon/c3runtime/plugin.js",
+            "exported": "examples/construct/api-demo-html5/scripts/plugins/C3MiniGameBridge/c3runtime/plugin.js",
+            "bytes": 135,
+            "sha256": "932731e7f0821d365331e9fbd44380087d7779c6d44c2e54a18b2fec7b23c636"
+          },
+          {
+            "source": "addon/c3runtime/type.js",
+            "exported": "examples/construct/api-demo-html5/scripts/plugins/C3MiniGameBridge/c3runtime/type.js",
+            "bytes": 158,
+            "sha256": "7797e343d302dc0944dd38ff5aca2b7cb983584e909d0f31fe171183ff1e0333"
+          }
+        ],
+        "scope": "The exported runtime includes the current addon implementation, including TikTok platform enumeration and keyboard options. This is export evidence, not TikTok/device/payment validation."
+      }
+    }
   }
 }

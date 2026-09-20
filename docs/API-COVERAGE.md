@@ -1,8 +1,8 @@
 # API 覆盖与调用约定
 
-本说明对应 0.2.0 的 [platform-api.js](../src/runtime/platform-api.js) 和 [bridge.js](../src/runtime/bridge.js)。目录包含 **171 个唯一 API 名称、20 类能力**；微信纳入 142 个名称，抖音纳入 140 个名称。同名接口可能有不同调用种类，例如分享。
+本说明对应 0.3.0 的 [platform-api.js](../src/runtime/platform-api.js)、[TikTok 独立目录](../src/runtime/tiktok-api.js)和 [bridge.js](../src/runtime/bridge.js)。目录包含 **194 个唯一 API 名称、21 类能力**；微信纳入 153 个名称，抖音 140 个，TikTok 59 个。同名接口按平台保留独立调用契约。
 
-这里的“纳入目录”表示适配层允许按指定原生协议调用，不表示每个基础库都支持，也不表示接口已获授权、广告有填充、网络域名已配置或业务执行成功。`supported` 只检查当前平台的目录项和原生函数是否存在；事件还要求对应 `off...` 存在。能力查询不调用业务 API，不登录、不申请权限、不发起分享、请求或支付。当前目录不包含支付。
+这里的“纳入目录”表示适配层允许按指定原生协议调用，不表示每个基础库都支持，也不表示接口已获授权、广告有填充、网络域名已配置或业务执行成功。`supported` 只检查当前平台的目录项和原生函数是否存在；普通事件还要求对应 `off...` 存在；目录显式登记的全量 off / 无 off 特例只停用本订阅回调。能力查询不调用业务 API，不登录、不申请权限、不发起分享、请求或支付。新增支付接口按平台独立登记，客户端回调不表示已付款或已发货，详见 [TikTok IAP](TIKTOK-IAP.md)。
 
 ## 6 个通用接口
 
@@ -46,7 +46,7 @@ try {
 
 `createAPIObject` 返回的音频、广告、视频、SocketTask、文件管理器和开放数据对象，由调用方按原生文档使用。需要释放的对象应显式 `destroy()` / `close()`，对象自身的 on/off 监听也由调用方管理；管理器或 sharedCanvas 不应被当作可随意销毁的独立资源。文件管理器的读写方法、SocketTask 的 send/onOpen、开放数据对象的 postMessage 等仍按对应平台原生协议调用。
 
-桥接 dispose 会拒绝自身未完成的 callAPI、取消可取消的任务，并尝试移除所有通过 onAPIEvent 注册的监听。某个原生 off 抛错时仍继续清理其他订阅，并报告失败；晚到回调不再交给已释放的订阅。插件实例释放只清理该实例的订阅，不销毁共享全局桥接。全局事件缺少 off 方法时，本层不会创建无法移除的订阅。
+桥接 dispose 会拒绝自身未完成的 callAPI、取消可取消的任务，并尝试移除所有通过 onAPIEvent 注册的监听。某个原生 off 抛错时仍继续清理其他订阅，并报告失败；晚到回调不再交给已释放的订阅。插件实例释放只清理该实例的订阅，不销毁共享全局桥接。普通事件缺少 off 方法时不可订阅；目录中显式标记的全量 off / 无 off 特例只停用自身回调，不清除其他原生监听，也不宣称该原生监听已物理移除。
 
 专用 `showRewardedVideo` 是例外：它自己创建广告并管理广告的监听、重试和销毁。只在原生 close 明确返回 `isEnded === true` 时报告 completed；取消或缺少结束状态均不是已完成。广告显示 Promise 成功只表示显示成功，奖励必须等实际 close。重复 close/error、注册到一半失败、off/destroy 抛错和 dispose 后异步 load 完成都已覆盖回归，清理失败不伪装成成功。
 
@@ -67,6 +67,8 @@ try {
 
 ## 配置与验证范围
 
+0.3.0 已在真实 Construct r495.2 编辑器重新导出，项目脚本与源码一致，微信 / 抖音 / TikTok 三端转换成功；本机回归 255 项通过、0 项失败。本轮微信 IDE 已验证启动、53 个入口和分类/返回导航，尚未运行新版自检或点击支付入口；TikTok IDE、真机和真实支付仍未验证。
+
 | 功能 | 项目需要提供或验证 |
 | --- | --- |
 | 平台运行 | 自己的 AppID、目标基础库、真实设备；IDE 方法存在不等于真机行为一致 |
@@ -78,215 +80,250 @@ try {
 | 开放数据 / 榜单 | 对应域配置、平台身份和访问权限；主域和开放数据域 API 不是互换使用，支持探测不证明榜单已可用 |
 | 自定义成绩服务 | 明确 HTTPS scoreEndpoint 与自己的业务服务；不是平台内置排行榜的模拟实现 |
 
-当前全量自动化记录为 **213 项通过、0 项失败**；最终交付测试数字与 IDE / 真机结果以 [验证记录](VALIDATION.md) 的最新复测为准。测试覆盖调用层与运行时的契约和失败路径，其中大量使用受控原生 API 夹具，不能当作全部 171 个接口的目标设备验收。
+历史 0.2.0 自动化基线为 **213 项通过、0 项失败**；最终交付测试数字与 IDE / 真机结果以 [验证记录](VALIDATION.md) 的最新复测为准。测试覆盖调用层与运行时的契约和失败路径，其中大量使用受控原生 API 夹具，不能当作所有当前目录接口的目标设备验收。
 
-新版 `MiniGameApiSuite` 已完成真实 Construct r495.2 编辑器导出及两端构建，页面有 11 个分类、51 个功能入口。微信 IDE 基础库 3.15.3 已观察到 WebGL2 渲染和真实 `runtime-ready`，启动为 0 项错误、2 项警告；iPhone 12 和 iPad Pro 12.9 模拟器配置在完整重开项目后均正常显示，不能视为两台真机验证。17 项常用自检实际结果为 **17 成功、0 失败、0 跳过**，并已从真实运行时控制台读回确认；这些自检不主动请求授权、分享或连接外网，会读设备信息并操作本示例专用存储键和临时文件。当前 IDE 宿主能力探测为 **133 / 171**，只表示方法可用，不代表 133 项业务调用成功。新版已完成 Toast、操作菜单、Loading、键盘输入/完成、音频停止/结束等部分交互验收，具体边界见验证记录；抖音 IDE、两端真机及需要外部配置的功能尚未完成验收。历史 21 项 `WeChatApiDemo` 的归档文件位于 `examples/construct/archive/`，其旧结果不能直接代替新版结果。
+历史 0.2.0 `MiniGameApiSuite` 已完成真实 Construct r495.2 编辑器导出及两端构建，页面有 11 个分类、51 个功能入口。微信 IDE 基础库 3.15.3 已观察到 WebGL2 渲染和真实 `runtime-ready`，启动为 0 项错误、2 项警告；iPhone 12 和 iPad Pro 12.9 模拟器配置在完整重开项目后均正常显示，不能视为两台真机验证。17 项常用自检实际结果为 **17 成功、0 失败、0 跳过**，并已从真实运行时控制台读回确认；这些自检不主动请求授权、分享或连接外网，会读设备信息并操作本示例专用存储键和临时文件。该历史 IDE 宿主能力探测为 **133 / 171**，只表示方法可用，不代表 133 项业务调用成功。该版已完成 Toast、操作菜单、Loading、键盘输入/完成、音频停止/结束等部分交互验收，具体边界见验证记录；抖音 / TikTok IDE、三端真机及需要外部配置的功能尚未完成验收。历史 21 项 `WeChatApiDemo` 的归档文件位于 `examples/construct/archive/`，其旧结果不能直接代替新版结果。
 
 **已知未解决问题：微信 IDE 原生 Modal 触发 `worker path empty`。** 基础库 3.15.3、完整重开后的 3.12.1 都复现，弹窗仍会显示。实际请求 URL 正确包含 `libName=WAAccelerateWorker.js`；本机源码与隔离函数复现已定位 IDE 转发 URL 时丢失该查询参数。此为本机调查结论，未获官方确认，也没有交付验证过的修复。新版 Modal 确认与取消回调正常，但仍触发此错误。见 [微信调试记录](WECHAT-DEBUGGING.md)。本层不修改微信内部 Worker、不屏蔽错误、不用伪造成功替代原生弹窗。
 
+## TikTok Native 与支付
+
+TikTok 使用独立的 `TTMinis.game` 命名空间，不映射到抖音 `tt`。原生 runtime 无需 SDK init；插件 Init 只配置本项目桥接。TikTok 目录按官方分类文档核对；原生对象方法仍在返回对象上调用。当前没有 TikTok IDE、真机或真实支付验证。
+
+`pay` 使用后端创建的 `trade_order_id`。运行时 `bridge.pay` 返回客户端完成状态和 `fulfillment: "unconfirmed"`，不会发货；`pollPaymentOrder` 查询自己的已鉴权后端，超时保持 pending。服务器验签辅助不会代替订单校验、持久化幂等和发货事务。见 [IAP 接入说明](TIKTOK-IAP.md)。
+
 ## 分类概览
 
-| 分类 | 唯一 API 名称数 | 调用种类 |
-| --- | ---: | --- |
-| 系统信息 | 21 | `sync`、`async`、`object` |
-| 生命周期 | 11 | `event`、`async`、`sync` |
-| 渲染与字体 | 5 | `object`、`sync` |
-| 触摸、键鼠 | 10 | `event` |
-| 原生界面 | 6 | `async` |
-| 原生键盘 | 6 | `async`、`event` |
-| 剪贴板 | 2 | `async` |
-| 本地存储 | 10 | `async`、`sync` |
-| 网络与连接 | 6 | `async`、`event`、`object` |
-| 文件 | 1 | `object` |
-| 设备与传感器 | 22 | `async`、`event` |
-| 音频与录音 | 6 | `object`、`async` |
-| 图像、视频与录屏 | 11 | `async`、`object` |
-| 登录与设置 | 9 | `async` |
-| 分享 | 6 | `async`、`event`、`sync` |
-| 跳转与回访 | 10 | `async` |
-| 广告 | 6 | `object` |
-| 开放数据与榜单 | 14 | `object`、`async`、`event` |
-| 原生按钮 | 7 | `object` |
-| 数据分析 | 2 | `sync`、`async` |
+下表按当前源码生成；平台数量按独立名称计数，不表示目标设备验收。
+
+| 分类 | 唯一名称 | 微信 | 抖音 | TikTok |
+| --- | ---: | ---: | ---: | ---: |
+| 系统信息 | 21 | 18 | 10 | 8 |
+| 生命周期 | 12 | 10 | 8 | 4 |
+| 渲染与字体 | 8 | 8 | 4 | 4 |
+| 触摸、键盘与鼠标 | 11 | 11 | 10 | 4 |
+| 原生界面 | 6 | 6 | 6 | 0 |
+| 原生键盘 | 7 | 7 | 6 | 7 |
+| 剪贴板 | 2 | 2 | 2 | 0 |
+| 本地存储 | 10 | 10 | 10 | 10 |
+| 网络与连接 | 7 | 7 | 6 | 3 |
+| 文件 | 1 | 1 | 1 | 1 |
+| 设备与传感器 | 22 | 22 | 21 | 2 |
+| 音频与录音 | 6 | 5 | 3 | 2 |
+| 图像、视频与录屏 | 12 | 7 | 9 | 0 |
+| 登录与设置 | 12 | 11 | 9 | 2 |
+| 分享 | 8 | 5 | 5 | 3 |
+| 跳转与回访 | 13 | 1 | 9 | 4 |
+| 广告 | 6 | 5 | 4 | 2 |
+| 开放数据与榜单 | 14 | 8 | 12 | 0 |
+| 原生按钮 | 7 | 4 | 3 | 0 |
+| 数据分析 | 4 | 3 | 2 | 0 |
+| 支付 | 5 | 2 | 0 | 3 |
 
 ## 完整目录
 
-以下表格由代码目录生成。平台列表示该平台被纳入此调用协议，**不表示其全部版本、场景、权限和当前设备都可用**。按当前宿主实际 getCapabilities 结果调用。
+各平台独立列示调用种类；未列入时不借用另一平台的同名方法。平台版本、权限和实际可用性仍需使用 getCapabilities 查询。
 
-| 分类 | API 名称 | 种类 | 纳入目录的平台 |
-| --- | --- | --- | --- |
-| 系统信息 | `canIUse` | `sync` | 微信、抖音 |
-| 系统信息 | `getSystemInfoSync` | `sync` | 微信、抖音 |
-| 系统信息 | `getLaunchOptionsSync` | `sync` | 微信、抖音 |
-| 系统信息 | `getWindowInfo` | `sync` | 微信 |
-| 系统信息 | `getDeviceInfo` | `sync` | 微信 |
-| 系统信息 | `getAppBaseInfo` | `sync` | 微信 |
-| 系统信息 | `getSystemSetting` | `sync` | 微信 |
-| 系统信息 | `getAppAuthorizeSetting` | `sync` | 微信 |
-| 系统信息 | `getEnterOptionsSync` | `sync` | 微信 |
-| 系统信息 | `getAccountInfoSync` | `sync` | 微信 |
-| 系统信息 | `getBatteryInfoSync` | `sync` | 微信 |
-| 系统信息 | `getMenuButtonBoundingClientRect` | `sync` | 微信 |
-| 系统信息 | `getEnvInfoSync` | `sync` | 抖音 |
-| 系统信息 | `getMenuButtonLayout` | `sync` | 抖音 |
-| 系统信息 | `getSystemInfo` | `async` | 微信、抖音 |
-| 系统信息 | `getSystemInfoAsync` | `async` | 微信 |
-| 系统信息 | `getBatteryInfo` | `async` | 微信 |
-| 系统信息 | `getPerformance` | `object` | 微信、抖音 |
-| 系统信息 | `getUpdateManager` | `object` | 微信、抖音 |
-| 系统信息 | `getLogManager` | `object` | 微信、抖音 |
-| 系统信息 | `getRealtimeLogManager` | `object` | 微信、抖音 |
-| 生命周期 | `onShow` | `event` | 微信、抖音 |
-| 生命周期 | `onHide` | `event` | 微信、抖音 |
-| 生命周期 | `onError` | `event` | 微信、抖音 |
-| 生命周期 | `onMemoryWarning` | `event` | 微信、抖音 |
-| 生命周期 | `onWindowResize` | `event` | 微信、抖音 |
-| 生命周期 | `onUnhandledRejection` | `event` | 微信 |
-| 生命周期 | `onAudioInterruptionBegin` | `event` | 微信 |
-| 生命周期 | `onAudioInterruptionEnd` | `event` | 微信 |
-| 生命周期 | `exitMiniProgram` | `async` | 微信、抖音 |
-| 生命周期 | `loadSubpackage` | `async` | 微信、抖音 |
-| 生命周期 | `restartMiniProgramSync` | `sync` | 抖音 |
-| 渲染与字体 | `createCanvas` | `object` | 微信、抖音 |
-| 渲染与字体 | `createImage` | `object` | 微信、抖音 |
-| 渲染与字体 | `createOffscreenCanvas` | `object` | 微信 |
-| 渲染与字体 | `loadFont` | `sync` | 微信、抖音 |
-| 渲染与字体 | `setPreferredFramesPerSecond` | `sync` | 微信、抖音 |
-| 触摸、键鼠 | `onTouchStart` | `event` | 微信、抖音 |
-| 触摸、键鼠 | `onTouchMove` | `event` | 微信、抖音 |
-| 触摸、键鼠 | `onTouchEnd` | `event` | 微信、抖音 |
-| 触摸、键鼠 | `onTouchCancel` | `event` | 微信、抖音 |
-| 触摸、键鼠 | `onKeyDown` | `event` | 微信、抖音 |
-| 触摸、键鼠 | `onKeyUp` | `event` | 微信、抖音 |
-| 触摸、键鼠 | `onMouseDown` | `event` | 微信、抖音 |
-| 触摸、键鼠 | `onMouseMove` | `event` | 微信、抖音 |
-| 触摸、键鼠 | `onMouseUp` | `event` | 微信、抖音 |
-| 触摸、键鼠 | `onWheel` | `event` | 微信、抖音 |
-| 原生界面 | `showToast` | `async` | 微信、抖音 |
-| 原生界面 | `hideToast` | `async` | 微信、抖音 |
-| 原生界面 | `showLoading` | `async` | 微信、抖音 |
-| 原生界面 | `hideLoading` | `async` | 微信、抖音 |
-| 原生界面 | `showModal` | `async` | 微信、抖音 |
-| 原生界面 | `showActionSheet` | `async` | 微信、抖音 |
-| 原生键盘 | `showKeyboard` | `async` | 微信、抖音 |
-| 原生键盘 | `hideKeyboard` | `async` | 微信、抖音 |
-| 原生键盘 | `updateKeyboard` | `async` | 微信、抖音 |
-| 原生键盘 | `onKeyboardInput` | `event` | 微信、抖音 |
-| 原生键盘 | `onKeyboardConfirm` | `event` | 微信、抖音 |
-| 原生键盘 | `onKeyboardComplete` | `event` | 微信、抖音 |
-| 剪贴板 | `getClipboardData` | `async` | 微信、抖音 |
-| 剪贴板 | `setClipboardData` | `async` | 微信、抖音 |
-| 本地存储 | `getStorage` | `async` | 微信、抖音 |
-| 本地存储 | `setStorage` | `async` | 微信、抖音 |
-| 本地存储 | `removeStorage` | `async` | 微信、抖音 |
-| 本地存储 | `clearStorage` | `async` | 微信、抖音 |
-| 本地存储 | `getStorageInfo` | `async` | 微信、抖音 |
-| 本地存储 | `getStorageSync` | `sync` | 微信、抖音 |
-| 本地存储 | `setStorageSync` | `sync` | 微信、抖音 |
-| 本地存储 | `removeStorageSync` | `sync` | 微信、抖音 |
-| 本地存储 | `clearStorageSync` | `sync` | 微信、抖音 |
-| 本地存储 | `getStorageInfoSync` | `sync` | 微信、抖音 |
-| 网络与连接 | `request` | `async` | 微信、抖音 |
-| 网络与连接 | `downloadFile` | `async` | 微信、抖音 |
-| 网络与连接 | `uploadFile` | `async` | 微信、抖音 |
-| 网络与连接 | `getNetworkType` | `async` | 微信、抖音 |
-| 网络与连接 | `onNetworkStatusChange` | `event` | 微信、抖音 |
-| 网络与连接 | `connectSocket` | `object` | 微信、抖音 |
-| 文件 | `getFileSystemManager` | `object` | 微信、抖音 |
-| 设备与传感器 | `setKeepScreenOn` | `async` | 微信、抖音 |
-| 设备与传感器 | `getScreenBrightness` | `async` | 微信、抖音 |
-| 设备与传感器 | `setScreenBrightness` | `async` | 微信、抖音 |
-| 设备与传感器 | `vibrateShort` | `async` | 微信、抖音 |
-| 设备与传感器 | `vibrateLong` | `async` | 微信、抖音 |
-| 设备与传感器 | `startAccelerometer` | `async` | 微信、抖音 |
-| 设备与传感器 | `stopAccelerometer` | `async` | 微信、抖音 |
-| 设备与传感器 | `startCompass` | `async` | 微信、抖音 |
-| 设备与传感器 | `stopCompass` | `async` | 微信、抖音 |
-| 设备与传感器 | `startGyroscope` | `async` | 微信、抖音 |
-| 设备与传感器 | `stopGyroscope` | `async` | 微信、抖音 |
-| 设备与传感器 | `startDeviceMotionListening` | `async` | 微信、抖音 |
-| 设备与传感器 | `stopDeviceMotionListening` | `async` | 微信、抖音 |
-| 设备与传感器 | `scanCode` | `async` | 微信、抖音 |
-| 设备与传感器 | `getLocation` | `async` | 微信、抖音 |
-| 设备与传感器 | `onAccelerometerChange` | `event` | 微信、抖音 |
-| 设备与传感器 | `onCompassChange` | `event` | 微信、抖音 |
-| 设备与传感器 | `onGyroscopeChange` | `event` | 微信、抖音 |
-| 设备与传感器 | `onDeviceMotionChange` | `event` | 微信、抖音 |
-| 设备与传感器 | `onDeviceOrientationChange` | `event` | 微信、抖音 |
-| 设备与传感器 | `setDeviceOrientation` | `async` | 微信、抖音 |
-| 设备与传感器 | `onUserCaptureScreen` | `event` | 微信 |
-| 音频与录音 | `createInnerAudioContext` | `object` | 微信、抖音 |
-| 音频与录音 | `getRecorderManager` | `object` | 微信、抖音 |
-| 音频与录音 | `createWebAudioContext` | `object` | 微信 |
-| 音频与录音 | `setInnerAudioOption` | `async` | 微信 |
-| 音频与录音 | `getAvailableAudioSources` | `async` | 微信 |
-| 音频与录音 | `getAudioContext` | `object` | 抖音 |
-| 图像、视频与录屏 | `chooseImage` | `async` | 微信、抖音 |
-| 图像、视频与录屏 | `previewImage` | `async` | 微信、抖音 |
-| 图像、视频与录屏 | `saveImageToPhotosAlbum` | `async` | 微信、抖音 |
-| 图像、视频与录屏 | `chooseVideo` | `async` | 微信、抖音 |
-| 图像、视频与录屏 | `saveVideoToPhotosAlbum` | `async` | 微信、抖音 |
-| 图像、视频与录屏 | `getImageInfo` | `async` | 抖音 |
-| 图像、视频与录屏 | `compressImage` | `async` | 微信 |
-| 图像、视频与录屏 | `createVideo` | `object` | 微信、抖音 |
-| 图像、视频与录屏 | `createOffscreenVideo` | `object` | 抖音 |
-| 图像、视频与录屏 | `getGameRecorderManager` | `object` | 抖音 |
-| 图像、视频与录屏 | `getGameRecorder` | `object` | 微信 |
-| 登录与设置 | `login` | `async` | 微信、抖音 |
-| 登录与设置 | `checkSession` | `async` | 微信、抖音 |
-| 登录与设置 | `getSetting` | `async` | 微信、抖音 |
-| 登录与设置 | `authorize` | `async` | 微信、抖音 |
-| 登录与设置 | `openSetting` | `async` | 微信、抖音 |
-| 登录与设置 | `requestSubscribeMessage` | `async` | 微信、抖音 |
-| 登录与设置 | `openCustomerServiceConversation` | `async` | 微信、抖音 |
-| 登录与设置 | `getUserInfo` | `async` | 微信、抖音 |
-| 登录与设置 | `showDouyinOpenAuth` | `async` | 抖音 |
-| 分享 | `showShareMenu` | `async` | 微信、抖音 |
-| 分享 | `hideShareMenu` | `async` | 微信、抖音 |
-| 分享 | `onShareAppMessage` | `event` | 微信、抖音 |
-| 分享 | `shareAppMessage` | `sync`（微信） / `async`（抖音） | 微信、抖音 |
-| 分享 | `onShareTimeline` | `event` | 微信 |
-| 分享 | `shareMessageToFriend` | `async` | 抖音 |
-| 跳转与回访 | `navigateToMiniProgram` | `async` | 微信 |
-| 跳转与回访 | `navigateToScene` | `async` | 抖音 |
-| 跳转与回访 | `addShortcut` | `async` | 抖音 |
-| 跳转与回访 | `showFavoriteGuide` | `async` | 抖音 |
-| 跳转与回访 | `showRevisitGuide` | `async` | 抖音 |
-| 跳转与回访 | `openAwemeUserProfile` | `async` | 抖音 |
-| 跳转与回访 | `checkScene` | `async` | 抖音 |
-| 跳转与回访 | `checkShortcut` | `async` | 抖音 |
-| 跳转与回访 | `checkFollowState` | `async` | 抖音 |
-| 跳转与回访 | `checkFollowAwemeState` | `async` | 抖音 |
-| 广告 | `createBannerAd` | `object` | 微信、抖音 |
-| 广告 | `createRewardedVideoAd` | `object` | 微信、抖音 |
-| 广告 | `createInterstitialAd` | `object` | 微信、抖音 |
-| 广告 | `createCustomAd` | `object` | 微信 |
-| 广告 | `createGridAd` | `object` | 微信 |
-| 广告 | `createGridGamePanel` | `object` | 抖音 |
-| 开放数据与榜单 | `getOpenDataContext` | `object` | 微信、抖音 |
-| 开放数据与榜单 | `getSharedCanvas` | `object` | 微信、抖音 |
-| 开放数据与榜单 | `setUserCloudStorage` | `async` | 微信、抖音 |
-| 开放数据与榜单 | `getUserCloudStorage` | `async` | 微信、抖音 |
-| 开放数据与榜单 | `removeUserCloudStorage` | `async` | 微信、抖音 |
-| 开放数据与榜单 | `getFriendCloudStorage` | `async` | 微信 |
-| 开放数据与榜单 | `getGroupCloudStorage` | `async` | 微信 |
-| 开放数据与榜单 | `getCloudStorageByRelation` | `async` | 抖音 |
-| 开放数据与榜单 | `setUserGroup` | `async` | 抖音 |
-| 开放数据与榜单 | `setImRankData` | `async` | 抖音 |
-| 开放数据与榜单 | `getImRankList` | `async` | 抖音 |
-| 开放数据与榜单 | `getImRankData` | `async` | 抖音 |
-| 开放数据与榜单 | `setImRankDataInOpenContext` | `async` | 抖音 |
-| 开放数据与榜单 | `onMessage` | `event` | 微信、抖音 |
-| 原生按钮 | `createUserInfoButton` | `object` | 微信 |
-| 原生按钮 | `createGameClubButton` | `object` | 微信 |
-| 原生按钮 | `createFeedbackButton` | `object` | 微信 |
-| 原生按钮 | `createOpenSettingButton` | `object` | 微信 |
-| 原生按钮 | `createContactButton` | `object` | 抖音 |
-| 原生按钮 | `createFollowButton` | `object` | 抖音 |
-| 原生按钮 | `createInteractiveButton` | `object` | 抖音 |
-| 数据分析 | `reportAnalytics` | `sync` | 微信、抖音 |
-| 数据分析 | `reportScene` | `async` | 抖音 |
+| 分类 | API 名称 | 微信契约 | 抖音契约 | TikTok 契约 |
+| --- | --- | --- | --- | --- |
+| 系统信息 | `getSystemInfoSync` | `sync` | `sync` | `sync` |
+| 系统信息 | `getLaunchOptionsSync` | `sync` | `sync` | `sync` |
+| 系统信息 | `canIUse` | 未列入 | `sync` | `sync` |
+| 系统信息 | `getWindowInfo` | `sync` | 未列入 | `sync` |
+| 系统信息 | `getDeviceInfo` | `sync` | 未列入 | 未列入 |
+| 系统信息 | `getAppBaseInfo` | `sync` | 未列入 | 未列入 |
+| 系统信息 | `getSystemSetting` | `sync` | 未列入 | 未列入 |
+| 系统信息 | `getAppAuthorizeSetting` | `sync` | 未列入 | 未列入 |
+| 系统信息 | `getEnterOptionsSync` | `sync` | 未列入 | `sync` |
+| 系统信息 | `getAccountInfoSync` | `sync` | 未列入 | 未列入 |
+| 系统信息 | `getBatteryInfoSync` | `sync` | 未列入 | 未列入 |
+| 系统信息 | `getMenuButtonBoundingClientRect` | `sync` | 未列入 | `sync` |
+| 系统信息 | `getEnvInfoSync` | 未列入 | `sync` | 未列入 |
+| 系统信息 | `getMenuButtonLayout` | 未列入 | `sync` | 未列入 |
+| 系统信息 | `getSystemInfo` | `async` | `async` | `async` |
+| 系统信息 | `getSystemInfoAsync` | `async` | 未列入 | 未列入 |
+| 系统信息 | `getBatteryInfo` | `async` | 未列入 | 未列入 |
+| 系统信息 | `getPerformance` | `object`；不传 options | `object`；不传 options | 未列入 |
+| 系统信息 | `getUpdateManager` | `object`；不传 options | `object`；不传 options | `object`；不传 options |
+| 系统信息 | `getLogManager` | `object` | `object` | 未列入 |
+| 系统信息 | `getRealtimeLogManager` | `object`；不传 options | `object`；不传 options | 未列入 |
+| 生命周期 | `onShow` | `event`；需 offShow 撤销订阅 | `event`；需 offShow 撤销订阅 | `event`；需 offShow 撤销订阅 |
+| 生命周期 | `onHide` | `event`；需 offHide 撤销订阅 | `event`；需 offHide 撤销订阅 | `event`；需 offHide 撤销订阅 |
+| 生命周期 | `onError` | `event`；需 offError 撤销订阅 | `event`；需 offError 撤销订阅 | 未列入 |
+| 生命周期 | `onMemoryWarning` | `event`；需 offMemoryWarning 撤销订阅 | `event`；需 offMemoryWarning 撤销订阅 | 未列入 |
+| 生命周期 | `onWindowResize` | `event`；需 offWindowResize 撤销订阅 | `event`；需 offWindowResize 撤销订阅 | 未列入 |
+| 生命周期 | `onUnhandledRejection` | `event`；需 offUnhandledRejection 撤销订阅 | 未列入 | 未列入 |
+| 生命周期 | `onAudioInterruptionBegin` | `event`；需 offAudioInterruptionBegin 撤销订阅 | 未列入 | 未列入 |
+| 生命周期 | `onAudioInterruptionEnd` | `event`；需 offAudioInterruptionEnd 撤销订阅 | 未列入 | 未列入 |
+| 生命周期 | `exitMiniProgram` | `async`；默认不设超时 | `async`；默认不设超时 | 未列入 |
+| 生命周期 | `loadSubpackage` | `async` | `async` | `async` |
+| 生命周期 | `restartMiniProgramSync` | 未列入 | `sync` | 未列入 |
+| 渲染与字体 | `createCanvas` | `object`；不传 options | `object`；不传 options | `object`；不传 options |
+| 渲染与字体 | `createImage` | `object`；不传 options | `object`；不传 options | `object`；不传 options |
+| 渲染与字体 | `loadFont` | `sync` | `sync` | `sync` |
+| 渲染与字体 | `setPreferredFramesPerSecond` | `sync` | `sync` | `sync` |
+| 渲染与字体 | `setCursor` | `sync` | 未列入 | 未列入 |
+| 渲染与字体 | `isPointerLocked` | `sync` | 未列入 | 未列入 |
+| 渲染与字体 | `requestPointerLock` | `sync` | 未列入 | 未列入 |
+| 渲染与字体 | `exitPointerLock` | `sync` | 未列入 | 未列入 |
+| 触摸、键盘与鼠标 | `onTouchStart` | `event`；需 offTouchStart 撤销订阅 | `event`；需 offTouchStart 撤销订阅 | `event`；需 offTouchStart 撤销订阅 |
+| 触摸、键盘与鼠标 | `onTouchMove` | `event`；需 offTouchMove 撤销订阅 | `event`；需 offTouchMove 撤销订阅 | `event`；需 offTouchMove 撤销订阅 |
+| 触摸、键盘与鼠标 | `onTouchEnd` | `event`；需 offTouchEnd 撤销订阅 | `event`；需 offTouchEnd 撤销订阅 | `event`；需 offTouchEnd 撤销订阅 |
+| 触摸、键盘与鼠标 | `onTouchCancel` | `event`；需 offTouchCancel 撤销订阅 | `event`；需 offTouchCancel 撤销订阅 | `event`；需 offTouchCancel 撤销订阅 |
+| 触摸、键盘与鼠标 | `onKeyDown` | `event`；需 offKeyDown 撤销订阅 | `event`；需 offKeyDown 撤销订阅 | 未列入 |
+| 触摸、键盘与鼠标 | `onKeyUp` | `event`；需 offKeyUp 撤销订阅 | `event`；需 offKeyUp 撤销订阅 | 未列入 |
+| 触摸、键盘与鼠标 | `onMouseDown` | `event`；需 offMouseDown 撤销订阅 | `event`；需 offMouseDown 撤销订阅 | 未列入 |
+| 触摸、键盘与鼠标 | `onMouseMove` | `event`；需 offMouseMove 撤销订阅 | `event`；需 offMouseMove 撤销订阅 | 未列入 |
+| 触摸、键盘与鼠标 | `onMouseUp` | `event`；需 offMouseUp 撤销订阅 | `event`；需 offMouseUp 撤销订阅 | 未列入 |
+| 触摸、键盘与鼠标 | `onWheel` | `event`；需 offWheel 撤销订阅 | `event`；需 offWheel 撤销订阅 | 未列入 |
+| 触摸、键盘与鼠标 | `getGamepads` | `sync` | 未列入 | 未列入 |
+| 原生界面 | `showToast` | `async` | `async` | 未列入 |
+| 原生界面 | `hideToast` | `async` | `async` | 未列入 |
+| 原生界面 | `showLoading` | `async` | `async` | 未列入 |
+| 原生界面 | `hideLoading` | `async` | `async` | 未列入 |
+| 原生界面 | `showModal` | `async`；默认不设超时 | `async`；默认不设超时 | 未列入 |
+| 原生界面 | `showActionSheet` | `async`；默认不设超时 | `async`；默认不设超时 | 未列入 |
+| 原生键盘 | `showKeyboard` | `async`；默认不设超时；快捷动作显式 keyboardType: text | `async`；默认不设超时 | `async`；默认不设超时；快捷动作显式 keyboardType: text |
+| 原生键盘 | `hideKeyboard` | `async`；默认不设超时 | `async`；默认不设超时 | `async`；默认不设超时 |
+| 原生键盘 | `updateKeyboard` | `async`；默认不设超时 | `async`；默认不设超时 | `async`；默认不设超时 |
+| 原生键盘 | `onKeyboardInput` | `event`；需 offKeyboardInput 撤销订阅 | `event`；需 offKeyboardInput 撤销订阅 | `event`；需 offKeyboardInput 撤销订阅 |
+| 原生键盘 | `onKeyboardConfirm` | `event`；需 offKeyboardConfirm 撤销订阅 | `event`；需 offKeyboardConfirm 撤销订阅 | `event`；需 offKeyboardConfirm 撤销订阅 |
+| 原生键盘 | `onKeyboardComplete` | `event`；需 offKeyboardComplete 撤销订阅 | `event`；需 offKeyboardComplete 撤销订阅 | `event`；需 offKeyboardComplete 撤销订阅 |
+| 原生键盘 | `onKeyboardHeightChange` | `event`；需 offKeyboardHeightChange 撤销订阅 | 未列入 | `event`；需 offKeyboardHeightChange 撤销订阅 |
+| 剪贴板 | `getClipboardData` | `async` | `async` | 未列入 |
+| 剪贴板 | `setClipboardData` | `async` | `async` | 未列入 |
+| 本地存储 | `getStorage` | `async` | `async` | `async` |
+| 本地存储 | `setStorage` | `async` | `async` | `async` |
+| 本地存储 | `removeStorage` | `async` | `async` | `async` |
+| 本地存储 | `clearStorage` | `async` | `async` | `async` |
+| 本地存储 | `getStorageInfo` | `async` | `async` | `async` |
+| 本地存储 | `getStorageSync` | `sync` | `sync` | `sync` |
+| 本地存储 | `setStorageSync` | `sync` | `sync` | `sync` |
+| 本地存储 | `removeStorageSync` | `sync` | `sync` | `sync` |
+| 本地存储 | `clearStorageSync` | `sync` | `sync` | `sync` |
+| 本地存储 | `getStorageInfoSync` | `sync` | `sync` | `sync` |
+| 网络与连接 | `request` | `async` | `async` | `async` |
+| 网络与连接 | `downloadFile` | `async` | `async` | 未列入 |
+| 网络与连接 | `uploadFile` | `async` | `async` | 未列入 |
+| 网络与连接 | `getNetworkType` | `async` | `async` | `async` |
+| 网络与连接 | `onNetworkStatusChange` | `event`；需 offNetworkStatusChange 撤销订阅 | `event`；需 offNetworkStatusChange 撤销订阅 | 未列入 |
+| 网络与连接 | `onNetworkWeakChange` | `event`；需 offNetworkWeakChange 撤销订阅 | 未列入 | 未列入 |
+| 网络与连接 | `connectSocket` | `object` | `object` | `object` |
+| 文件 | `getFileSystemManager` | `object`；不传 options | `object`；不传 options | `object`；不传 options |
+| 设备与传感器 | `setKeepScreenOn` | `async` | `async` | 未列入 |
+| 设备与传感器 | `getScreenBrightness` | `async` | `async` | 未列入 |
+| 设备与传感器 | `setScreenBrightness` | `async` | `async` | 未列入 |
+| 设备与传感器 | `vibrateShort` | `async` | `async` | `async` |
+| 设备与传感器 | `vibrateLong` | `async` | `async` | `async` |
+| 设备与传感器 | `startAccelerometer` | `async` | `async` | 未列入 |
+| 设备与传感器 | `stopAccelerometer` | `async` | `async` | 未列入 |
+| 设备与传感器 | `startCompass` | `async` | `async` | 未列入 |
+| 设备与传感器 | `stopCompass` | `async` | `async` | 未列入 |
+| 设备与传感器 | `startGyroscope` | `async` | `async` | 未列入 |
+| 设备与传感器 | `stopGyroscope` | `async` | `async` | 未列入 |
+| 设备与传感器 | `startDeviceMotionListening` | `async` | `async` | 未列入 |
+| 设备与传感器 | `stopDeviceMotionListening` | `async` | `async` | 未列入 |
+| 设备与传感器 | `scanCode` | `async`；默认不设超时 | `async`；默认不设超时 | 未列入 |
+| 设备与传感器 | `getLocation` | `async`；默认不设超时 | `async`；默认不设超时 | 未列入 |
+| 设备与传感器 | `onAccelerometerChange` | `event`；需 offAccelerometerChange 撤销订阅 | `event`；需 offAccelerometerChange 撤销订阅 | 未列入 |
+| 设备与传感器 | `onCompassChange` | `event`；需 offCompassChange 撤销订阅 | `event`；需 offCompassChange 撤销订阅 | 未列入 |
+| 设备与传感器 | `onGyroscopeChange` | `event`；需 offGyroscopeChange 撤销订阅 | `event`；需 offGyroscopeChange 撤销订阅 | 未列入 |
+| 设备与传感器 | `onDeviceMotionChange` | `event`；需 offDeviceMotionChange 撤销订阅 | `event`；需 offDeviceMotionChange 撤销订阅 | 未列入 |
+| 设备与传感器 | `onDeviceOrientationChange` | `event`；需 offDeviceOrientationChange 撤销订阅 | `event`；需 offDeviceOrientationChange 撤销订阅 | 未列入 |
+| 设备与传感器 | `setDeviceOrientation` | `async` | `async` | 未列入 |
+| 设备与传感器 | `onUserCaptureScreen` | `event`；宿主取消接口影响全部监听；桥接仅停用自身回调 | 未列入 | 未列入 |
+| 音频与录音 | `createInnerAudioContext` | `object` | `object` | `object` |
+| 音频与录音 | `getRecorderManager` | `object`；不传 options | `object`；不传 options | 未列入 |
+| 音频与录音 | `createWebAudioContext` | `object`；不传 options | 未列入 | `object`；不传 options |
+| 音频与录音 | `setInnerAudioOption` | `async` | 未列入 | 未列入 |
+| 音频与录音 | `getAvailableAudioSources` | `async` | 未列入 | 未列入 |
+| 音频与录音 | `getAudioContext` | 未列入 | `object`；不传 options | 未列入 |
+| 图像、视频与录屏 | `chooseImage` | `async`；默认不设超时 | `async`；默认不设超时 | 未列入 |
+| 图像、视频与录屏 | `previewImage` | `async`；默认不设超时 | `async`；默认不设超时 | 未列入 |
+| 图像、视频与录屏 | `saveImageToPhotosAlbum` | `async`；默认不设超时 | `async`；默认不设超时 | 未列入 |
+| 图像、视频与录屏 | `chooseVideo` | 未列入 | `async`；默认不设超时 | 未列入 |
+| 图像、视频与录屏 | `saveVideoToPhotosAlbum` | 未列入 | `async`；默认不设超时 | 未列入 |
+| 图像、视频与录屏 | `chooseMedia` | `async`；默认不设超时 | 未列入 | 未列入 |
+| 图像、视频与录屏 | `getImageInfo` | 未列入 | `async` | 未列入 |
+| 图像、视频与录屏 | `compressImage` | `async` | 未列入 | 未列入 |
+| 图像、视频与录屏 | `createVideo` | `object` | `object` | 未列入 |
+| 图像、视频与录屏 | `createOffscreenVideo` | 未列入 | `object` | 未列入 |
+| 图像、视频与录屏 | `getGameRecorderManager` | 未列入 | `object`；不传 options | 未列入 |
+| 图像、视频与录屏 | `getGameRecorder` | `object`；不传 options | 未列入 | 未列入 |
+| 登录与设置 | `login` | `async` | `async` | `async` |
+| 登录与设置 | `checkSession` | `async` | `async` | 未列入 |
+| 登录与设置 | `getSetting` | `async` | `async` | 未列入 |
+| 登录与设置 | `authorize` | `async`；默认不设超时 | `async`；默认不设超时 | `async`；默认不设超时 |
+| 登录与设置 | `openSetting` | `async`；默认不设超时 | `async`；默认不设超时 | 未列入 |
+| 登录与设置 | `requestSubscribeMessage` | `async`；默认不设超时 | `async`；默认不设超时 | 未列入 |
+| 登录与设置 | `openCustomerServiceConversation` | `async`；默认不设超时 | `async`；默认不设超时 | 未列入 |
+| 登录与设置 | `getUserInfo` | `async`；默认不设超时 | `async`；默认不设超时 | 未列入 |
+| 登录与设置 | `showDouyinOpenAuth` | 未列入 | `async`；默认不设超时 | 未列入 |
+| 登录与设置 | `getPrivacySetting` | `async` | 未列入 | 未列入 |
+| 登录与设置 | `requirePrivacyAuthorize` | `async`；默认不设超时 | 未列入 | 未列入 |
+| 登录与设置 | `openPrivacyContract` | `async`；默认不设超时 | 未列入 | 未列入 |
+| 分享 | `showShareMenu` | `async` | `async` | 未列入 |
+| 分享 | `hideShareMenu` | `async` | `async` | 未列入 |
+| 分享 | `onShareAppMessage` | `event`；需 offShareAppMessage 撤销订阅 | `event`；需 offShareAppMessage 撤销订阅 | 未列入 |
+| 分享 | `shareAppMessage` | `sync`；无完成回调，不能确认分享成功 | `async`；默认不设超时 | `async`；默认不设超时 |
+| 分享 | `onShareTimeline` | `event`；需 offShareTimeline 撤销订阅 | 未列入 | 未列入 |
+| 分享 | `shareMessageToFriend` | 未列入 | `async`；默认不设超时 | 未列入 |
+| 跳转与回访 | `navigateToMiniProgram` | `async`；默认不设超时 | 未列入 | 未列入 |
+| 跳转与回访 | `navigateToScene` | 未列入 | `async`；默认不设超时 | 未列入 |
+| 跳转与回访 | `addShortcut` | 未列入 | `async`；默认不设超时 | `async`；默认不设超时 |
+| 跳转与回访 | `showFavoriteGuide` | 未列入 | `async`；默认不设超时 | 未列入 |
+| 跳转与回访 | `showRevisitGuide` | 未列入 | `async`；默认不设超时 | 未列入 |
+| 跳转与回访 | `openAwemeUserProfile` | 未列入 | `async`；默认不设超时 | 未列入 |
+| 跳转与回访 | `checkScene` | 未列入 | `async` | 未列入 |
+| 跳转与回访 | `checkShortcut` | 未列入 | `async` | 未列入 |
+| 跳转与回访 | `checkFollowState` | 未列入 | `async` | 未列入 |
+| 跳转与回访 | `checkFollowAwemeState` | 未列入 | `async` | 未列入 |
+| 广告 | `createBannerAd` | `object` | `object` | 未列入 |
+| 广告 | `createRewardedVideoAd` | `object` | `object` | `object` |
+| 广告 | `createInterstitialAd` | `object` | `object` | `object` |
+| 广告 | `createCustomAd` | `object` | 未列入 | 未列入 |
+| 广告 | `createGridAd` | `object` | 未列入 | 未列入 |
+| 广告 | `createGridGamePanel` | 未列入 | `object` | 未列入 |
+| 开放数据与榜单 | `getSharedCanvas` | `object`；不传 options | `object`；不传 options | 未列入 |
+| 开放数据与榜单 | `getOpenDataContext` | `object` | `object`；不传 options | 未列入 |
+| 开放数据与榜单 | `setUserCloudStorage` | `async` | `async` | 未列入 |
+| 开放数据与榜单 | `getUserCloudStorage` | `async` | `async` | 未列入 |
+| 开放数据与榜单 | `removeUserCloudStorage` | `async` | `async` | 未列入 |
+| 开放数据与榜单 | `getFriendCloudStorage` | `async` | 未列入 | 未列入 |
+| 开放数据与榜单 | `getGroupCloudStorage` | `async` | 未列入 | 未列入 |
+| 开放数据与榜单 | `getCloudStorageByRelation` | 未列入 | `async` | 未列入 |
+| 开放数据与榜单 | `setUserGroup` | 未列入 | `async` | 未列入 |
+| 开放数据与榜单 | `setImRankData` | 未列入 | `async` | 未列入 |
+| 开放数据与榜单 | `getImRankList` | 未列入 | `async` | 未列入 |
+| 开放数据与榜单 | `getImRankData` | 未列入 | `async` | 未列入 |
+| 开放数据与榜单 | `setImRankDataInOpenContext` | 未列入 | `async` | 未列入 |
+| 开放数据与榜单 | `onMessage` | `event`；无原生撤销接口；桥接仅停用自身回调；仅开放数据域 | `event`；需 offMessage 撤销订阅 | 未列入 |
+| 原生按钮 | `createUserInfoButton` | `object` | 未列入 | 未列入 |
+| 原生按钮 | `createGameClubButton` | `object` | 未列入 | 未列入 |
+| 原生按钮 | `createFeedbackButton` | `object` | 未列入 | 未列入 |
+| 原生按钮 | `createOpenSettingButton` | `object` | 未列入 | 未列入 |
+| 原生按钮 | `createContactButton` | 未列入 | `object` | 未列入 |
+| 原生按钮 | `createFollowButton` | 未列入 | `object` | 未列入 |
+| 原生按钮 | `createInteractiveButton` | 未列入 | `object` | 未列入 |
+| 数据分析 | `reportAnalytics` | 未列入 | `sync` | 未列入 |
+| 数据分析 | `reportEvent` | `sync` | 未列入 | 未列入 |
+| 数据分析 | `reportPerformance` | `sync` | 未列入 | 未列入 |
+| 数据分析 | `reportScene` | `async` | `async` | 未列入 |
+| 支付 | `requestMidasPayment` | `async`；默认不设超时 | 未列入 | 未列入 |
+| 支付 | `requestMidasPaymentGameItem` | `async`；默认不设超时 | 未列入 | 未列入 |
+| 生命周期 | `preDownloadSubpackage` | 未列入 | 未列入 | `async` |
+| 支付 | `checkBalance` | 未列入 | 未列入 | `async` |
+| 支付 | `pay` | 未列入 | 未列入 | `async`；默认不设超时；客户端回调不确认付款/发货；参数 trade_order_id |
+| 支付 | `navigateToBalance` | 未列入 | 未列入 | `async`；默认不设超时；客户端回调不确认付款/发货 |
+| 跳转与回访 | `startEntranceMission` | 未列入 | 未列入 | `async`；默认不设超时 |
+| 跳转与回访 | `getEntranceMissionReward` | 未列入 | 未列入 | `async` |
+| 跳转与回访 | `getShortcutMissionReward` | 未列入 | 未列入 | `async` |
+| 分享 | `shareToStory` | 未列入 | 未列入 | `async`；默认不设超时 |
+| 分享 | `onCopyUrl` | 未列入 | 未列入 | `event`；宿主取消接口影响全部监听；桥接仅停用自身回调 |
 
 ## 官方依据
 
 接口名称及调用分组参考 [微信官方小游戏 API 类型定义](https://github.com/wechat-miniprogram/minigame-api-typings/blob/master/types/wx/lib.wx.api.d.ts) 和 [抖音小游戏 JavaScript API 目录](https://developer.open-douyin.com/docs/resource/zh-CN/mini-game/develop/api/javascript-api/overview)，本轮核对日期为 2026-09-20。微信分享的 void 签名与无回调 options 来自官方类型；抖音分享、reportScene 的异步回调分别见 [tt.shareAppMessage](https://developer.open-douyin.com/docs/resource/zh-CN/mini-game/develop/api/javascript-api/open-capacity/retweet/tt-share-app-message)、[tt.reportScene](https://developer.open-douyin.com/docs/resource/zh-CN/mini-game/develop/api/javascript-api/data-analysis/tt-report-scene)。平台权限、版本和业务限制以对应官方文档及实际宿主结果为准。
+
+
+TikTok 独立契约参考 [Mini Games SDK Overview](https://developers.tiktok.com/docs/en/mini-games-sdk-overview)、[支付](https://developers.tiktok.com/docs/en/mini-games-sdk-payment)、[设备与网络](https://developers.tiktok.com/docs/en/mini-games-sdk-device-and-network)及目录项中的 source。原生不需要 SDK init；支付回调不构成发货凭据。

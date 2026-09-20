@@ -86,6 +86,21 @@ test("platform operations wait for successful init", async () => {
   assert.equal(instance.getLastOperation(), "login");
 });
 
+test("platform enum preserves existing indices and adds TikTok at index three", async () => {
+  for (const [index, setting] of ["auto", "douyin", "wechat", "tiktok"].entries()) {
+    properties = [index, ""];
+    let received;
+    const actual = setting === "auto" ? "tiktok" : setting;
+    installBridge({ getPlatform: () => actual, init: async options => { received = options; } });
+    const instance = create();
+    await instance.init();
+    assert.equal(received.platform, setting);
+    assert.equal(instance.getPlatform(), actual);
+    assert.equal(instance.isReady(), true);
+    assert.deepEqual(names(instance), ["OnReady"]);
+  }
+});
+
 test("login code is only held in memory and is never added to score payload", async () => {
   let payload;
   installBridge({ reportScore: async options => { payload = options; } });
@@ -526,7 +541,7 @@ test("common event-sheet actions map native names and options without auto-calli
     ["GetNetworkType", ["f"], "getNetworkType", {}],
     ["SetClipboard", ["copy", "g"], "setClipboardData", { data: "copy" }],
     ["GetClipboard", ["h"], "getClipboardData", {}],
-    ["ShowKeyboard", ["text", 50, "i"], "showKeyboard", { defaultValue: "text", maxLength: 50, multiple: false, confirmHold: false, confirmType: "done" }],
+    ["ShowKeyboard", ["text", 50, "i"], "showKeyboard", { defaultValue: "text", maxLength: 50, multiple: false, confirmHold: false, confirmType: "done", keyboardType: "text" }],
     ["HideKeyboard", ["j"], "hideKeyboard", {}]
   ];
   for (const [action, args, apiName, options] of cases) {
@@ -535,6 +550,18 @@ test("common event-sheet actions map native names and options without auto-calli
     assert.equal(instance.getLastAPITag(), args.at(-1));
   }
   assert.equal(calls.length, cases.length);
+});
+
+test("keyboard shortcut supplies required keyboardType on WeChat and TikTok without changing Douyin options", async () => {
+  for (const platform of ["wechat", "douyin", "tiktok"]) {
+    let options;
+    installBridge({ getPlatform: () => platform, callAPI: async (_name, value) => { options = value; } });
+    const instance = create();
+    await instance.init();
+    await plugin.Acts.ShowKeyboard.call(instance, "", 100, "keyboard");
+    assert.equal(options.keyboardType, ["wechat", "tiktok"].includes(platform) ? "text" : undefined);
+    assert.equal(Object.hasOwn(options, "keyboardType"), ["wechat", "tiktok"].includes(platform));
+  }
 });
 
 test("generic login results and events stay out of savegames and are cleared on load/release", async () => {

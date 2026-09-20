@@ -46,7 +46,7 @@ if (filterForm) {
     let visible = 0;
     for (const row of rows) {
       const platformKind = platform ? row.dataset[platform] : '';
-      const kinds = platform ? [platformKind] : [row.dataset.wechat, row.dataset.douyin];
+      const kinds = platform ? [platformKind] : [row.dataset.wechat, row.dataset.douyin, row.dataset.tiktok];
       const show = (!query || row.dataset.search.includes(query)) && (!platform || !!platformKind) && (!kind || kinds.includes(kind)) && (!category || row.dataset.category === category);
       row.hidden = !show;
       if (show) visible++;

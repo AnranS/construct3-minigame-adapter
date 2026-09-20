@@ -6,7 +6,7 @@
     "plugins": {
       "c3minigamebridge": {
         "name": "MiniGameBridge",
-        "description": "Bridge to WeChat and Douyin host capabilities through the companion adapter.",
+        "description": "Bridge to WeChat, Douyin and TikTok host capabilities through the companion adapter.",
         "help-url": "https://www.construct.net/en/make-games/manuals/addon-sdk",
         "properties": {
           "platform": {
@@ -15,7 +15,8 @@
             "items": {
               "auto": "Auto-detect",
               "douyin": "Douyin",
-              "wechat": "WeChat"
+              "wechat": "WeChat",
+              "tiktok": "TikTok"
             }
           },
           "score-endpoint": {
@@ -198,7 +199,7 @@
             "params": {
               "event-name": {
                 "name": "Event name",
-                "desc": "The exact on-event name, such as onKeyboardInput. Both on and off support are required."
+                "desc": "The exact on-event name, such as onKeyboardInput. Cancellation follows the catalog: matching off where supported, otherwise local callback deactivation for explicitly registered exceptions."
               },
               "tag": {
                 "name": "Tag",
@@ -213,7 +214,7 @@
             "params": {
               "event-name": {
                 "name": "Event name",
-                "desc": "The exact on-event name, such as onKeyboardInput. Both on and off support are required."
+                "desc": "The exact on-event name, such as onKeyboardInput. Cancellation follows the catalog: matching off where supported, otherwise local callback deactivation for explicitly registered exceptions."
               },
               "tag": {
                 "name": "Tag",
@@ -387,7 +388,7 @@
         "expressions": {
           "platform": {
             "translated-name": "Platform",
-            "description": "Detected platform: douyin, wechat, or unsupported."
+            "description": "Detected platform: douyin, wechat, tiktok, or unsupported."
           },
           "last-error": {
             "translated-name": "LastError",

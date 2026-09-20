@@ -39,8 +39,10 @@ function startApiDemo(runtime) {
   layer.isTransparent = false;
   layer.backgroundColor = [1, 1, 1];
 
-  const api = globalThis.wx || globalThis.tt || null;
-  const platform = globalThis.wx ? '微信小游戏' : globalThis.tt ? '抖音小游戏' : '未检测到小游戏宿主';
+  const adapter = globalThis.__C3MiniGameAdapter;
+  const api = adapter?.api || globalThis.TTMinis?.game || globalThis.wx || globalThis.tt || null;
+  const platformId = adapter?.platform || (globalThis.TTMinis?.game ? 'tiktok' : globalThis.wx ? 'wechat' : globalThis.tt ? 'douyin' : '');
+  const platform = {wechat: '微信小游戏', douyin: '抖音小游戏', tiktok: 'TikTok 小游戏'}[platformId] || '未检测到小游戏宿主';
   const colors = {
     ink: [0.12, 0.14, 0.16], muted: [0.49, 0.52, 0.55], line: [0.91, 0.92, 0.93],
     success: [0.02, 0.65, 0.34], error: [0.80, 0.20, 0.24], info: [0.49, 0.52, 0.55],
@@ -74,7 +76,7 @@ function startApiDemo(runtime) {
     return chars.length > max ? chars.slice(0, max - 1).join('') + '…' : chars.join('');
   }
   function errorText(error) {
-    return short(error?.errMsg || error?.message || error || '宿主未返回错误说明', 120);
+    return short(error?.error?.error_msg || error?.errMsg || error?.message || error || '宿主未返回错误说明', 120);
   }
   function createText(size, color, bold = false, align = 'left') {
     const instance = textType.createInstance(layer.index, 0, 0);
@@ -426,7 +428,7 @@ function startApiDemo(runtime) {
     return outcome('监听已启用 · 再点显示键盘进行输入');
   });
   addRow(keyboard, 'keyboard-show', '显示原生键盘', '初始内容为 Demo，可手动输入', async () => {
-    await callbackCall(api, 'showKeyboard', {defaultValue: 'Demo', maxLength: 80, multiple: false, confirmHold: false, confirmType: 'done'});
+    await callbackCall(api, 'showKeyboard', {defaultValue: 'Demo', maxLength: 80, multiple: false, confirmHold: false, confirmType: 'done', keyboardType: 'text'});
     return outcome('显示请求成功；输入与完成结果见键盘事件');
   });
   addRow(keyboard, 'keyboard-hide', '隐藏原生键盘', '真实调用 hideKeyboard', async () => {
@@ -545,6 +547,24 @@ function startApiDemo(runtime) {
     }
     return outcome(`实际返回：${passed} 项成功，${failed} 项失败，${skipped} 项未支持或待验证；进入各分类查看详情`, failed ? 'error' : skipped ? 'info' : 'success');
   });
+
+  const payments = addGroup('支付与订单');
+  addRow(payments, 'payment-support', '支付接口支持情况', '仅检测接口；不下单、不扣款', () => {
+    const methods = platformId === 'tiktok' ? ['pay', 'checkBalance', 'navigateToBalance'] : ['requestMidasPayment', 'requestMidasPaymentGameItem'];
+    return outcome(methods.map(name => `${name}: ${plugin().supportsAPI(name) ? '可调用' : '不支持'}`).join(' · '), 'info');
+  });
+  addRow(payments, 'payment-contract', '订单与发货流程', '接入自有服务端后再测试支付', () => outcome('服务端创建订单 → 用户支付 → 服务端验签/查单/幂等发货 → 前端刷新；前端回调不代表已发货', 'config'));
+  if (platformId === 'tiktok') {
+    const revisit = addGroup('TikTok 回访与分享');
+    for (const [method, title] of [['startEntranceMission', '前往个人页回访入口'], ['addShortcut', '添加桌面快捷方式'], ['getEntranceMissionReward', '查询回访奖励资格'], ['getShortcutMissionReward', '查询快捷方式奖励资格']]) {
+      addRow(revisit, `tiktok-${method}`, title, `真实调用 ${method}；资格结果不自动发奖`, async () => {
+        const bridge = await readyPlugin();
+        if (!bridge.supportsAPI('canIUse') || !bridge.getAPISync('canIUse', method)) return outcome('当前 TikTok 版本不支持此功能', 'config');
+        const result = await bridge.callAPI(method, {});
+        return outcome(typeof result?.canReceiveReward === 'boolean' ? `奖励资格：${result.canReceiveReward ? '可领取' : '不可领取'}；由业务层确认发奖` : '已收到原生回调');
+      });
+    }
+  }
 
   const categoryMenu = addGroup('选择功能分类');
   const demoGroups = groups.filter(group => group !== categoryMenu);

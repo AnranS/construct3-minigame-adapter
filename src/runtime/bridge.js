@@ -1,6 +1,7 @@
 import {requireMethod} from './events.js';
 import {createPlatformAPI, PlatformAPIError} from './platform-api.js';
 export {PLATFORM_API_CATALOG, PLATFORM_API_CATEGORIES, PlatformAPIError} from './platform-api.js';
+export {pollPaymentOrder} from './payment.js';
 
 function endpoint(value, purpose) {
   if (typeof value !== 'string' || !/^https:\/\/[^/\s]+(?:\/|$)/i.test(value)) {
@@ -11,12 +12,13 @@ function endpoint(value, purpose) {
 
 /** Business APIs, independent of the DOM adapter. Does not contain any app secret. */
 export function createPlatformBridge({api, platform = 'douyin', ...initialConfig} = {}) {
-  if (!['douyin', 'wechat'].includes(platform)) throw new Error(`Unsupported platform: ${platform}`);
-  if (!api) throw new Error(`Missing ${platform === 'douyin' ? 'tt' : 'wx'} platform API`);
+  if (!['douyin', 'wechat', 'tiktok'].includes(platform)) throw new Error(`Unsupported platform: ${platform}`);
+  if (!api) throw new Error(`Missing ${{douyin: 'tt', wechat: 'wx', tiktok: 'TTMinis.game'}[platform]} platform API`);
   let config = {...initialConfig};
   const operations = createPlatformAPI({api, platform, defaultTimeoutMs: initialConfig.apiTimeoutMs ?? 30000});
   let disposed = false;
   let activeAd = null;
+  let activePayment = false;
   const ensure = () => { if (disposed) throw new Error('Platform bridge is disposed'); };
   const post = async (url, data) => {
     const response = await operations.callAPI('request', {
@@ -46,12 +48,27 @@ export function createPlatformBridge({api, platform = 'douyin', ...initialConfig
       const loginEndpoint = options.loginEndpoint || config.loginEndpoint;
       const url = loginEndpoint ? endpoint(loginEndpoint, 'Login') : null;
       const result = await operations.callAPI('login', platform === 'douyin' ? {force: options.force ?? false} : {});
-      if (!result.code) throw new Error('Platform login returned no authorization code');
+      if (typeof result?.code !== 'string' || !result.code) throw new Error('Platform login returned no authorization code');
       // Without a backend configuration, return the temporary code only in memory.
       // The caller must exchange it on its own backend; never log it or embed an app secret.
       if (!url) return {platform, code: result.code};
       const session = await post(url, {platform, code: result.code});
       return {platform, session};
+    },
+    async pay(options = {}, control = {}) {
+      ensure();
+      const method = {tiktok: 'pay', wechat: 'requestMidasPayment'}[platform];
+      if (!method || !operations.supportsAPI(method)) throw new PlatformAPIError('UNSUPPORTED', 'pay', platform);
+      if (!options || typeof options !== 'object' || Array.isArray(options)) throw new TypeError('Payment options must be an object');
+      if (platform === 'tiktok' && (typeof options.trade_order_id !== 'string' || !options.trade_order_id.trim())) throw new TypeError('TikTok pay requires a backend-created trade_order_id');
+      if (activePayment) throw new Error('A payment request is already in progress');
+      activePayment = true;
+      try {
+        // No automatic retry and no entitlement changes. Native success only closes
+        // the client flow; the authenticated backend decides fulfillment status.
+        const result = await operations.callAPI(method, options, control);
+        return {platform, clientStatus: 'completed', fulfillment: 'unconfirmed', result};
+      } finally { activePayment = false; }
     },
     showRewardedVideo(options = {}, control = {}) {
       ensure();
@@ -123,9 +140,11 @@ export function createPlatformBridge({api, platform = 'douyin', ...initialConfig
     },
     vibrate(type = 'short') {
       ensure();
-      if (typeof type === 'object') type = type.type || 'short';
+      const strength = typeof type === 'object' && type !== null ? type.strength ?? 'medium' : 'medium';
+      if (typeof type === 'object' && type !== null) type = type.type || 'short';
       if (!['short', 'long'].includes(type)) return Promise.reject(new Error('vibrate supports short or long'));
-      return operations.callAPI(type === 'long' ? 'vibrateLong' : 'vibrateShort');
+      if (!['light', 'medium', 'heavy'].includes(strength)) return Promise.reject(new Error('Vibration strength must be light, medium or heavy'));
+      return operations.callAPI(type === 'long' ? 'vibrateLong' : 'vibrateShort', type === 'short' && ['wechat', 'tiktok'].includes(platform) ? {type: strength} : {});
     },
     getLaunchOptions() { ensure(); return operations.getAPISync('getLaunchOptionsSync'); },
     onPause(callback) { return operations.onAPIEvent('onHide', callback); },

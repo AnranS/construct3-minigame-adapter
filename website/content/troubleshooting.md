@@ -2,7 +2,7 @@
 
 先确认问题发生在插件初始化、导出检查、小游戏编译、引擎启动还是业务调用阶段。保留完整错误、工具版本、实际基础库日志和最小复现步骤，通常比反复修改编译选项更有效。
 
-本页对应 0.2.0 的实际验证记录。微信 IDE 已知的 Modal Worker 错误仍未修复，不能将弹窗正常显示当作该错误消失。
+本页保留 0.2.0 微信实际验证记录，并说明当前 {{VERSION}} 的新增接入边界。微信 IDE 已知的 Modal Worker 错误仍未修复，不能将弹窗正常显示当作该错误消失。
 
 ## 插件安装后没有小游戏导出选项
 
@@ -12,9 +12,9 @@
 
 ## 浏览器预览出现 UNSUPPORTED
 
-普通浏览器没有微信 `wx` / 抖音 `tt` 宿主及转换器安装的桥接。平台 API 需要在转换后的小游戏工程中验证。
+普通浏览器没有微信 `wx` / 抖音 `tt` / TikTok `TTMinis.game` 原生宿主及转换器安装的桥接。平台 API 需要在转换后的小游戏工程中验证。
 
-如果已经在小游戏 IDE 中，检查是否导入了转换输出目录，确认 `game.js` 正常执行，再用 `supportsAPI` 或 `getCapabilities` 查看具体 API。目录外的名称、当前平台没有纳入的接口、缺少原生方法或缺少对应 `off...` 的事件都会不可用。
+如果已经在小游戏 IDE 中，检查是否导入了转换输出目录，确认 `game.js` 正常执行，再用 `supportsAPI` 或 `getCapabilities` 查看具体 API。目录外的名称、当前平台没有纳入的接口、缺少原生方法或缺少目录要求的 `off...` 时会不可用；显式登记的全量 off / 无 off 事件特例按本地停用契约处理。
 
 不要用模拟成功回调消除这个错误；应让界面明确提示当前功能不可用。
 
@@ -39,6 +39,8 @@ node src/cli.mjs inspect --input ./exports/my-game
 ```
 
 检查报告中所有 `error` 项。Construct 项目转换需要显式加 `--experimental`；这个标记不会放行其他检查错误。
+
+同平台有效 `--overwrite` 中省略 `--appid` 会保留旧值，也保留 `libVersion` 与合法的私有配置；首次或跨平台构建省略时留空。显式 `--appid` 覆盖旧值，显式空字符串会清空。旧配置、标记或用于判断平台的报告损坏时会拒绝覆盖并保留原输出，先确认文件内容和工程归属。
 
 输出不能与输入重叠。已有输出需要保留 `.c3-minigame-output.json` 并加 `--overwrite`，否则请使用新的空目录。不要把任意现有目录伪装成本工具生成的目录。
 
@@ -119,3 +121,11 @@ node src/cli.mjs inspect --input ./exports/my-game
 本轮安装的官方 IDE CLI 暴露 `get_simulator_console`、`get_simulator_network` 等工具入口，但调用受到 IDE 服务端口设置约束。若返回 `IDE service port disabled`，说明该调试通道未启用，不是游戏编译错误。继续使用 IDE 控制台即可排查游戏，无需为运行项目强制开启该端口。
 
 提交问题时请附上工具与基础库版本、Construct 版本、构建报告、最小复现步骤、第一条错误及平台类别。移除临时登录 code、用户输入、个人存储内容和项目私有凭据。已验收与待验收项目见[验证记录](../validation/)。
+
+## TikTok 检测不到宿主或支付没有发货
+
+确认运行目标为 TikTok Native Mini Games，并选择 `tiktok` 平台。TikTok 的命名空间是 `TTMinis.game`，不能把抖音 `tt` 注入或重命名来模拟通过。原生 runtime 不需要 `TTMinis.game.init()`；HTML runtime 的 SDK 加载流程不适用于原生转换产物。
+
+同名 API 也需要看目录中 TikTok 的独立契约。当前未登记的顶层方法不会自动透传；文件管理器、音频或 SocketTask 上的方法需要在返回对象上调用。
+
+支付的客户端 success / complete 不代表订单已确认或已发货。检查自己的服务器是否收到 Webhook、使用原始请求体验签、验证商户和环境、幂等更新订单，再检查客户端查询的是自己的已鉴权订单接口。轮询超时保持 pending，不自动认定失败或再次扣款；用户取消或失败后重新购买需创建新订单。见 [TikTok 支付接入](../tiktok-iap/)。本项目尚无 TikTok IDE、真机或真实支付验证。

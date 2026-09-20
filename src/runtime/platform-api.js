@@ -1,3 +1,5 @@
+import {TIKTOK_API_CATALOG} from './tiktok-api.js';
+
 /** Explicit native API directory. Presence means callable, not permission, inventory,
  * network access or business success. No operation runs during capability discovery.
  * Sources (checked 2026-09-20):
@@ -6,7 +8,7 @@
  */
 const directory = [];
 const both = ['wechat', 'douyin'];
-const noOptions = new Set('getPerformance getUpdateManager getRealtimeLogManager createCanvas createImage createWebAudioContext getRecorderManager getAudioContext getGameRecorderManager getGameRecorder getFileSystemManager getOpenDataContext getSharedCanvas'.split(' '));
+const noOptions = new Set('getPerformance getUpdateManager getRealtimeLogManager createCanvas createImage createWebAudioContext getRecorderManager getAudioContext getGameRecorderManager getGameRecorder getFileSystemManager getSharedCanvas'.split(' '));
 function group(category, kind, names, extra = {}) {
   for (const name of names.split(/\s+/).filter(Boolean)) {
     directory.push(Object.freeze({name, kind, category,
@@ -14,7 +16,10 @@ function group(category, kind, names, extra = {}) {
       ...(kind === 'event' ? {off: `off${name.slice(2)}`} : {}), ...extra, platforms: Object.freeze([...(extra.platforms || both)])}));
   }
 }
-group('system', 'sync', 'canIUse getSystemInfoSync getLaunchOptionsSync');
+group('system', 'sync', 'getSystemInfoSync getLaunchOptionsSync');
+// These entries are independently documented for Douyin. Do not infer WeChat
+// Mini Game support from the similarly named WeChat Mini Program namespace.
+group('system', 'sync', 'canIUse', {platforms: ['douyin']});
 group('system', 'sync', 'getWindowInfo getDeviceInfo getAppBaseInfo getSystemSetting getAppAuthorizeSetting getEnterOptionsSync getAccountInfoSync getBatteryInfoSync getMenuButtonBoundingClientRect', {platforms: ['wechat']});
 group('system', 'sync', 'getEnvInfoSync getMenuButtonLayout', {platforms: ['douyin']});
 group('system', 'async', 'getSystemInfo');
@@ -26,18 +31,21 @@ group('lifecycle', 'async', 'exitMiniProgram', {interaction: true});
 group('lifecycle', 'async', 'loadSubpackage');
 group('lifecycle', 'sync', 'restartMiniProgramSync', {platforms: ['douyin']});
 group('rendering', 'object', 'createCanvas createImage');
-group('rendering', 'object', 'createOffscreenCanvas', {platforms: ['wechat']});
 group('rendering', 'sync', 'loadFont setPreferredFramesPerSecond');
+group('rendering', 'sync', 'setCursor isPointerLocked requestPointerLock exitPointerLock', {platforms: ['wechat'], deviceScope: 'desktop'});
 group('input', 'event', 'onTouchStart onTouchMove onTouchEnd onTouchCancel onKeyDown onKeyUp onMouseDown onMouseMove onMouseUp onWheel');
+group('input', 'sync', 'getGamepads', {platforms: ['wechat'], deviceScope: 'desktop', minVersion: '3.6.4'});
 group('ui', 'async', 'showToast hideToast showLoading hideLoading');
 group('ui', 'async', 'showModal showActionSheet', {interaction: true});
 group('keyboard', 'async', 'showKeyboard hideKeyboard updateKeyboard', {interaction: true});
 group('keyboard', 'event', 'onKeyboardInput onKeyboardConfirm onKeyboardComplete');
+group('keyboard', 'event', 'onKeyboardHeightChange', {platforms: ['wechat'], minVersion: '2.21.3'});
 group('clipboard', 'async', 'getClipboardData setClipboardData');
 group('storage', 'async', 'getStorage setStorage removeStorage clearStorage getStorageInfo');
 group('storage', 'sync', 'getStorageSync setStorageSync removeStorageSync clearStorageSync getStorageInfoSync');
 group('network', 'async', 'request downloadFile uploadFile getNetworkType');
 group('network', 'event', 'onNetworkStatusChange');
+group('network', 'event', 'onNetworkWeakChange', {platforms: ['wechat'], minVersion: '2.21.0'});
 // SocketTask is returned unchanged. Creation is not the onOpen event.
 group('network', 'object', 'connectSocket');
 group('files', 'object', 'getFileSystemManager');
@@ -46,12 +54,17 @@ group('device', 'async', 'scanCode getLocation', {interaction: true});
 group('device', 'event', 'onAccelerometerChange onCompassChange onGyroscopeChange onDeviceMotionChange');
 group('device', 'event', 'onDeviceOrientationChange', {platforms: ['douyin']});
 group('device', 'async', 'setDeviceOrientation');
-group('device', 'event', 'onDeviceOrientationChange onUserCaptureScreen', {platforms: ['wechat']});
+group('device', 'event', 'onDeviceOrientationChange', {platforms: ['wechat']});
+// Native offUserCaptureScreen() removes every listener. Use a shared dispatcher
+// and local cancellation so one bridge cannot remove another consumer's handler.
+group('device', 'event', 'onUserCaptureScreen', {platforms: ['wechat'], offMode: 'all'});
 group('audio', 'object', 'createInnerAudioContext getRecorderManager');
 group('audio', 'object', 'createWebAudioContext', {platforms: ['wechat']});
 group('audio', 'async', 'setInnerAudioOption getAvailableAudioSources', {platforms: ['wechat']});
 group('audio', 'object', 'getAudioContext', {platforms: ['douyin']});
-group('media', 'async', 'chooseImage previewImage saveImageToPhotosAlbum chooseVideo saveVideoToPhotosAlbum', {interaction: true});
+group('media', 'async', 'chooseImage previewImage saveImageToPhotosAlbum', {interaction: true});
+group('media', 'async', 'chooseVideo saveVideoToPhotosAlbum', {platforms: ['douyin'], interaction: true});
+group('media', 'async', 'chooseMedia', {platforms: ['wechat'], interaction: true, minVersion: '2.23.0'});
 group('media', 'async', 'getImageInfo', {platforms: ['douyin']});
 group('media', 'async', 'compressImage', {platforms: ['wechat']});
 group('media', 'object', 'createVideo');
@@ -61,6 +74,8 @@ group('account', 'async', 'login checkSession getSetting');
 group('account', 'async', 'authorize openSetting requestSubscribeMessage openCustomerServiceConversation', {interaction: true});
 group('account', 'async', 'getUserInfo', {interaction: true});
 group('account', 'async', 'showDouyinOpenAuth', {platforms: ['douyin'], interaction: true});
+group('account', 'async', 'getPrivacySetting', {platforms: ['wechat'], minVersion: '2.32.3'});
+group('account', 'async', 'requirePrivacyAuthorize openPrivacyContract', {platforms: ['wechat'], interaction: true, minVersion: '2.32.3'});
 group('share', 'async', 'showShareMenu hideShareMenu');
 group('share', 'event', 'onShareAppMessage');
 // wx deliberately has no sharing success callback. The sync return only means invoked.
@@ -74,16 +89,27 @@ group('navigation', 'async', 'checkScene checkShortcut checkFollowState checkFol
 group('ads', 'object', 'createBannerAd createRewardedVideoAd createInterstitialAd');
 group('ads', 'object', 'createCustomAd createGridAd', {platforms: ['wechat']});
 group('ads', 'object', 'createGridGamePanel', {platforms: ['douyin']});
-group('open-data', 'object', 'getOpenDataContext getSharedCanvas');
+group('open-data', 'object', 'getSharedCanvas');
+group('open-data', 'object', 'getOpenDataContext', {platforms: ['wechat']});
+group('open-data', 'object', 'getOpenDataContext', {platforms: ['douyin'], noOptions: true});
 group('open-data', 'async', 'setUserCloudStorage getUserCloudStorage removeUserCloudStorage');
 group('open-data', 'async', 'getFriendCloudStorage getGroupCloudStorage', {platforms: ['wechat']});
 group('open-data', 'async', 'getCloudStorageByRelation setUserGroup setImRankData getImRankList getImRankData setImRankDataInOpenContext', {platforms: ['douyin']});
 // Open-data-only methods remain conditional on the actual native namespace.
-group('open-data', 'event', 'onMessage');
+group('open-data', 'event', 'onMessage', {platforms: ['douyin']});
+// The official WeChat open-data API has no wx.offMessage counterpart.
+group('open-data', 'event', 'onMessage', {platforms: ['wechat'], off: null, offMode: 'none', executionScope: 'open-data'});
 group('buttons', 'object', 'createUserInfoButton createGameClubButton createFeedbackButton createOpenSettingButton', {platforms: ['wechat']});
 group('buttons', 'object', 'createContactButton createFollowButton createInteractiveButton', {platforms: ['douyin']});
-group('analytics', 'sync', 'reportAnalytics');
+group('analytics', 'sync', 'reportAnalytics', {platforms: ['douyin']});
+group('analytics', 'sync', 'reportEvent reportPerformance', {platforms: ['wechat']});
 group('analytics', 'async', 'reportScene', {platforms: ['douyin']});
+group('analytics', 'async', 'reportScene', {platforms: ['wechat'], minVersion: '2.26.2'});
+// Only transport the explicit frontend request. A frontend success is never a
+// fulfillment decision; signing, order verification and delivery live server-side.
+group('payment', 'async', 'requestMidasPayment requestMidasPaymentGameItem', {platforms: ['wechat'], interaction: true, fulfillment: 'server-verified', minVersion: '2.19.2'});
+
+directory.push(...TIKTOK_API_CATALOG);
 
 export const PLATFORM_API_CATALOG = Object.freeze(directory);
 export const PLATFORM_API_CATEGORIES = Object.freeze([...new Set(directory.map(item => item.category))]);
@@ -98,10 +124,11 @@ const reasons = Object.freeze({UNSUPPORTED: 'API is not supported in this enviro
 export class PlatformAPIError extends Error {
   constructor(code, operation, platform, cause) {
     const safeOperation = typeof operation === 'string' && /^[A-Za-z][A-Za-z0-9]*$/.test(operation) ? operation : 'unknown';
-    const detail = cause?.errMsg || cause?.message;
+    const detail = cause?.errMsg || cause?.message || cause?.error?.error_msg;
     super(`${platform}.${safeOperation}: ${reasons[code] || code}${detail ? ` (${detail})` : ''}`);
     this.name = 'PlatformAPIError'; this.code = code; this.operation = safeOperation; this.platform = platform;
     if (cause !== undefined) Object.defineProperty(this, 'cause', {value: cause, configurable: true});
+    if (cause?.error?.error_code !== undefined) Object.defineProperty(this, 'nativeCode', {value: cause.error.error_code, configurable: true});
   }
   toJSON() { return {name: this.name, code: this.code, operation: this.operation, platform: this.platform, message: reasons[this.code] || 'API operation failed'}; }
 }
@@ -115,8 +142,54 @@ function timeoutArgument(value, operation, platform) {
   return value;
 }
 
+const sharedEventHubs = new WeakMap();
+const usesLocalUnsubscribe = entry => entry.offMode === 'all' || entry.offMode === 'none';
+
+/** Native APIs with no listener-specific off keep one inert dispatcher per host.
+ * Removing a subscription only releases its local callback. Never call a global
+ * off method: doing so would remove listeners owned by other engine/plugins.
+ * These events normally return void; when a platform requests share configuration,
+ * the last non-undefined callback return is passed back to the native host.
+ */
+function subscribeSharedEvent(api, entry, listener) {
+  let hubs = sharedEventHubs.get(api);
+  if (!hubs) { hubs = new Map(); sharedEventHubs.set(api, hubs); }
+  let hub = hubs.get(entry.name);
+  if (hub?.failed) throw hub.failure;
+  if (hub) {
+    hub.listeners.add(listener);
+    return () => hub.listeners.delete(listener);
+  }
+
+  hub = {listeners: new Set([listener]), failed: false, failure: null};
+  hubs.set(entry.name, hub);
+  hub.dispatch = function (...args) {
+    let result;
+    const failures = [];
+    for (const callback of [...hub.listeners]) {
+      if (!hub.listeners.has(callback)) continue;
+      try {
+        const value = callback.apply(this, args);
+        if (value !== undefined) result = value;
+      } catch (failure) { failures.push(failure); }
+    }
+    if (failures.length === 1) throw failures[0];
+    if (failures.length) throw new AggregateError(failures, 'Platform event callbacks failed');
+    return result;
+  };
+  try { api[entry.name].call(api, hub.dispatch); }
+  catch (failure) {
+    hub.listeners.clear();
+    // Registration may have attached the dispatcher before throwing. Retain the
+    // inert failed hub instead of risking duplicate native registration on retry.
+    hub.failed = true; hub.failure = failure;
+    throw failure;
+  }
+  return () => hub.listeners.delete(listener);
+}
+
 export function createPlatformAPI({api, platform = 'douyin', defaultTimeoutMs = 30000} = {}) {
-  if (!both.includes(platform)) throw new Error(`Unsupported platform: ${platform}`);
+  if (!['wechat', 'douyin', 'tiktok'].includes(platform)) throw new Error(`Unsupported platform: ${platform}`);
   if (!api) throw new TypeError('A native platform API object is required');
   timeoutArgument(defaultTimeoutMs, 'configure', platform);
   const catalog = directory.filter(item => item.platforms.includes(platform));
@@ -128,7 +201,7 @@ export function createPlatformAPI({api, platform = 'douyin', defaultTimeoutMs = 
   const reasonFor = entry => {
     if (disposed) return 'DISPOSED';
     if (!entry || typeof api[entry.name] !== 'function') return 'UNSUPPORTED';
-    if (entry.kind === 'event' && typeof api[entry.off] !== 'function') return 'UNSUPPORTED';
+    if (entry.kind === 'event' && !usesLocalUnsubscribe(entry) && typeof api[entry.off] !== 'function') return 'UNSUPPORTED';
     return null;
   };
   const lookup = (name, kind) => {
@@ -145,7 +218,9 @@ export function createPlatformAPI({api, platform = 'douyin', defaultTimeoutMs = 
       let entry;
       try {
         entry = lookup(name, 'async'); objectArgument(options, name, platform); objectArgument(control, name, platform);
-        for (const callback of ['success', 'fail', 'complete']) if (options[callback] !== undefined && typeof options[callback] !== 'function') throw error('INVALID_ARGUMENT', name);
+        for (const callback of ['success', 'fail', 'complete', ...(entry.failureCallback ? [entry.failureCallback] : [])]) {
+          if (options[callback] !== undefined && typeof options[callback] !== 'function') throw error('INVALID_ARGUMENT', name);
+        }
         if (control.onTask !== undefined && typeof control.onTask !== 'function') throw error('INVALID_ARGUMENT', name);
         if (control.signal && (typeof control.signal.addEventListener !== 'function' || typeof control.signal.removeEventListener !== 'function')) throw error('INVALID_ARGUMENT', name);
         timeoutArgument(control.timeoutMs ?? (entry.interaction ? 0 : defaultTimeoutMs), name, platform);
@@ -168,7 +243,10 @@ export function createPlatformAPI({api, platform = 'douyin', defaultTimeoutMs = 
         try { signal?.removeEventListener('abort', abort); } catch (failure) { cleanupFailures.push(failure); }
         if (abortRequested) abortTask();
         let callbackFailure;
-        try { (failure ? options.fail : options.success)?.call(api, result); } catch (cause) { callbackFailure = error('CALLBACK_ERROR', name, cause); }
+        const outcomeCallbacks = failure ? [options.fail, ...(entry.failureCallback ? [options[entry.failureCallback]] : [])] : [options.success];
+        for (const callback of new Set(outcomeCallbacks.filter(value => typeof value === 'function'))) {
+          try { callback.call(api, result); } catch (cause) { callbackFailure ??= error('CALLBACK_ERROR', name, cause); }
+        }
         try { options.complete?.call(api, result); } catch (cause) { callbackFailure ??= error('CALLBACK_ERROR', name, cause); }
         const finalFailure = callbackFailure || failure || (cleanupFailures.length ? error('CLEANUP_ERROR', name, cleanupFailures[0]) : null);
         if (finalFailure && cleanupFailures.length && !Object.prototype.hasOwnProperty.call(finalFailure, 'cleanupErrors')) Object.defineProperty(finalFailure, 'cleanupErrors', {value: cleanupFailures});
@@ -189,9 +267,11 @@ export function createPlatformAPI({api, platform = 'douyin', defaultTimeoutMs = 
         if (signal?.aborted || settled) { abort(); return; }
         const timeout = control.timeoutMs ?? (entry.interaction ? 0 : defaultTimeoutMs);
         if (timeout) timer = setTimeout(() => cancel('TIMEOUT'), timeout);
+        const nativeFail = cause => settle(error('PLATFORM_ERROR', name, cause), cause);
         task = api[name].call(api, {...options,
           success: result => settle(null, result),
-          fail: cause => settle(error('PLATFORM_ERROR', name, cause), cause),
+          fail: nativeFail,
+          ...(entry.failureCallback ? {[entry.failureCallback]: nativeFail} : {}),
           complete: result => {
             if (settled) return;
             // A complete-only native implementation must report its actual outcome.
@@ -241,15 +321,25 @@ export function createPlatformAPI({api, platform = 'douyin', defaultTimeoutMs = 
     onAPIEvent(name, callback) {
       const entry = lookup(name, 'event');
       if (typeof callback !== 'function') throw error('INVALID_ARGUMENT', name);
-      let active = true;
+      let active = true, nativeCleanup;
       const listener = function (...args) { if (active) return callback.apply(this, args); };
       const unsubscribe = () => {
         if (!active) return;
         active = false; subscriptions.delete(unsubscribe);
-        try { api[entry.off].call(api, listener); } catch (cause) { throw error('CLEANUP_ERROR', name, cause); }
+        try { nativeCleanup?.(); } catch (cause) { throw error('CLEANUP_ERROR', name, cause); }
       };
       subscriptions.add(unsubscribe);
-      try { api[name].call(api, listener); } catch (cause) {
+      try {
+        if (usesLocalUnsubscribe(entry)) {
+          nativeCleanup = subscribeSharedEvent(api, entry, listener);
+          // Native registration can synchronously invoke a callback that disposes
+          // this bridge before subscribeSharedEvent returns its local cleanup.
+          if (!active) nativeCleanup();
+        } else {
+          nativeCleanup = () => api[entry.off].call(api, listener);
+          api[name].call(api, listener);
+        }
+      } catch (cause) {
         const failure = error('PLATFORM_ERROR', name, cause);
         try { unsubscribe(); } catch (cleanup) { Object.defineProperty(failure, 'cleanupErrors', {value: [cleanup]}); }
         throw failure;
@@ -262,7 +352,12 @@ export function createPlatformAPI({api, platform = 'douyin', defaultTimeoutMs = 
       return [...new Set(directory.map(item => item.name))].map(name => {
         const entry = entries.get(name) || directory.find(item => item.name === name);
         const reason = reasonFor(entries.get(name));
-        return {name, kind: entry.kind, category: entry.category, platform, supported: !reason, ...(reason ? {reason} : {}), ...(entry.completion ? {completion: entry.completion} : {})};
+        return {name, kind: entry.kind, category: entry.category, platform, supported: !reason, ...(reason ? {reason} : {}),
+          ...(entry.completion ? {completion: entry.completion} : {}),
+          ...(entry.kind === 'event' ? {unsubscribe: usesLocalUnsubscribe(entry) ? 'local' : 'native'} : {}),
+          ...(entry.executionScope ? {executionScope: entry.executionScope} : {}),
+          ...(entry.deviceScope ? {deviceScope: entry.deviceScope} : {}),
+          ...(entry.fulfillment ? {fulfillment: entry.fulfillment} : {})};
       });
     },
     setDefaultTimeout(timeoutMs) { defaultTimeoutMs = timeoutArgument(timeoutMs, 'configure', platform); },

@@ -67,14 +67,14 @@ class MiniImageData {
 /** Install only missing globals, except fetch/XHR which must resolve package assets.
  * Existing descriptors are restored on dispose. The adapter is intentionally not a complete DOM.
  */
-export function installAdapter({platform = 'douyin', host = globalThis, api = host[platform === 'douyin' ? 'tt' : 'wx'], assetRoot = 'game', width, height, pixelRatio, bridgeConfig = {}, loadScript, autoClaimMainCanvas = true} = {}) {
-  if (!['douyin', 'wechat'].includes(platform)) throw new Error(`Unsupported platform: ${platform}`);
+export function installAdapter({platform = 'douyin', host = globalThis, api = platform === 'tiktok' ? host.TTMinis?.game : host[platform === 'douyin' ? 'tt' : 'wx'], assetRoot = 'game', width, height, pixelRatio, bridgeConfig = {}, loadScript, autoClaimMainCanvas = true} = {}) {
+  if (!['douyin', 'wechat', 'tiktok'].includes(platform)) throw new Error(`Unsupported platform: ${platform}`);
   if (installed.has(host)) {
     const existing = installed.get(host);
     if (existing.platform !== platform || existing.api !== api) throw new Error('A different adapter is already installed on this host');
     return existing;
   }
-  if (!api) throw new Error(`Missing platform API: ${platform === 'douyin' ? 'tt' : 'wx'}`);
+  if (!api) throw new Error(`Missing platform API: ${platform === 'tiktok' ? 'TTMinis.game' : platform === 'douyin' ? 'tt' : 'wx'}`);
   resolveAssetPath('probe', assetRoot); // Validate before changing the host.
   if (host.document?.createElement && !host.document.__c3MiniGameAdapter) throw new Error('Refusing to replace an existing browser DOM; install only in a mini-game VM');
   const info = typeof api.getWindowInfo === 'function' ? api.getWindowInfo() : typeof api.getSystemInfoSync === 'function' ? api.getSystemInfoSync() : {};
@@ -451,7 +451,12 @@ export function installAdapter({platform = 'douyin', host = globalThis, api = ho
           const raw = touch.identifier ?? touch.id ?? 0;
           const number = Number(raw);
           const identifier = Number.isSafeInteger(number) && number >= 0 ? number : raw;
-          return {...touch, identifier, target: canvas, clientX: touch.clientX ?? touch.x ?? 0, clientY: touch.clientY ?? touch.y ?? 0, pageX: touch.pageX ?? touch.clientX ?? touch.x ?? 0, pageY: touch.pageY ?? touch.clientY ?? touch.y ?? 0};
+          // TikTok documents screen coordinates on Touch. Its window can start
+          // below the screen origin; browser client coordinates are window-local.
+          // Explicit client/x values take precedence when the host supplies them.
+          const clientX = touch.clientX ?? touch.x ?? (platform === 'tiktok' ? touch.screenX : undefined) ?? 0;
+          const clientY = touch.clientY ?? touch.y ?? (platform === 'tiktok' && Number.isFinite(touch.screenY) ? touch.screenY - (Number.isFinite(info.screenTop) ? info.screenTop : 0) : undefined) ?? 0;
+          return {...touch, identifier, target: canvas, clientX, clientY, pageX: touch.pageX ?? clientX, pageY: touch.pageY ?? clientY};
         };
         const touches = (native.touches || []).map(mapTouch);
         const current = new Map(touches.map(touch => [touchKey(touch), touch]));

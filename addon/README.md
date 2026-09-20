@@ -1,13 +1,13 @@
-# MiniGameBridge addon 0.2.0
+# MiniGameBridge addon 0.3.0
 
-This experimental Construct SDK v2 addon exposes registered WeChat and Douyin APIs through the companion runtime adapter. Install it, export the project as HTML5, then run the converter. Installing the addon does not add a native mini-game exporter to Construct's export menu.
+This experimental Construct SDK v2 addon exposes registered WeChat, Douyin and TikTok APIs through the companion runtime adapter. Install it, export the project as HTML5, then run the converter. Installing the addon does not add a native mini-game exporter to Construct's export menu.
 
-The single-global object is `MiniGameBridge`; its permanent addon ID is `C3MiniGameBridge`. The manifest version is `0.2.0.0` (Construct's four-part format). It declares `supports-worker-mode: false`, shares the adapter's main-thread scope, and does not inject the adapter as a DOM script. API availability depends on the selected platform, SDK version and permissions. The addon does not call clipboard, login, location or other business APIs during installation or initialization.
+The single-global object is `MiniGameBridge`; its permanent addon ID is `C3MiniGameBridge`. The manifest version is `0.3.0.0` (Construct's four-part format). It declares `supports-worker-mode: false`, shares the adapter's main-thread scope, and does not inject the adapter as a DOM script. API availability depends on the selected platform, SDK version and permissions. The addon does not call clipboard, login, location or other business APIs during installation or initialization. Platform property indices remain auto=0, douyin=1, wechat=2; tiktok is appended at index 3. TikTok resolves the independent native `TTMinis.game` namespace, never Douyin `tt`. TikTok native APIs require no SDK init; the addon Init action only initializes the companion adapter.
 
 ## Event-sheet setup
 
 1. Install `dist/C3MiniGameBridge.c3addon`, then add a MiniGameBridge object.
-2. Choose Auto-detect, Douyin, or WeChat in its Platform property. Optionally configure your HTTPS Score endpoint.
+2. Choose Auto-detect, Douyin, WeChat, or TikTok in its Platform property. Optionally configure your HTTPS Score endpoint.
 3. Call **Init**, and wait for **On ready** before operations or subscriptions.
 4. Handle **On error** using `LastErrorCode`, `LastError`, and `LastOperation`. Generic operations also provide `LastAPIName` and `LastAPITag`.
 
@@ -26,7 +26,7 @@ All event-sheet actions are marked asynchronous so they support Construct's “W
 
 For example, after **On ready**, call API `getNetworkType` with `{}` and tag `network`. Under **On API succeeded("network")**, read `LastResultJSON`. For a synchronous read, use `getStorageSync`, arguments `["my-key"]`, and tag `save-read`.
 
-To observe keyboard input, subscribe to `onKeyboardInput` with tag `keyboard`. **On API event("keyboard")** provides `LastEventJSON`. Registration requires both the native `on` and `off` APIs. Repeating the same event name and tag replaces only that subscription; another tag is independent. Tags are case-sensitive and are never forwarded in native options. Each trigger retains its own name, tag and payload during nested events or synchronous calls.
+To observe keyboard input, subscribe to `onKeyboardInput` with tag `keyboard`. **On API event("keyboard")** provides `LastEventJSON`. Registration follows the catalog cancellation contract. Most events require native `on` and matching `off`; explicitly marked all-listener/no-off APIs only deactivate the addon’s own callback instead of removing other host listeners. Repeating the same event name and tag replaces only that subscription; another tag is independent. Tags are case-sensitive and are never forwarded in native options. Each trigger retains its own name, tag and payload during nested events or synchronous calls.
 
 Invalid JSON reports `INVALID_JSON` before invoking the API. Options must be an object and synchronous arguments must be an array; incorrect shapes report `INVALID_ARGUMENT`. API names must belong to the adapter's catalog. Use **Supports API(name)** and `CapabilitiesJSON` to inspect availability without invoking the API.
 
@@ -55,7 +55,7 @@ These actions construct native options and use the same tagged success/error con
 | Write / Read / Remove storage | `setStorage` / `getStorage` / `removeStorage`; write accepts any JSON value |
 | Get network type | `getNetworkType` |
 | Write / Read clipboard | `setClipboardData` / `getClipboardData` |
-| Show / Hide keyboard | `showKeyboard` / `hideKeyboard`; show uses single-line input and a Done confirmation |
+| Show / Hide keyboard | `showKeyboard` / `hideKeyboard`; show uses single-line input and a Done confirmation; WeChat and TikTok explicitly receive `keyboardType: "text"` |
 
 Storage actions use native keys without adding a prefix; choose project-specific keys. Missing-key behavior follows the platform and may be an error. Keyboard result text arrives through separately subscribed input/confirm/complete events. Use the generic actions for additional native options and registered APIs.
 
@@ -116,7 +116,7 @@ stopKeyboardEvents();
 audio.destroy();
 ```
 
-The caller owns returned native objects and their object-specific listeners; close/destroy them when finished. The addon cleans up only subscriptions created by its own `onAPIEvent` or event-sheet subscribe action. It never disposes the shared global bridge. Unsubscribe is idempotent, and released instances ignore late callbacks and do not fire completion events. Callbacks during native registration are also handled safely if the instance is released or unsubscribed immediately.
+The caller owns returned native objects and their object-specific listeners; close/destroy them when finished. The addon cleans up only subscriptions created by its own `onAPIEvent` or event-sheet subscribe action. For explicitly registered APIs whose off method removes every listener or is absent, cleanup disables this callback locally; it does not claim that the native listener was removed. It never disposes the shared global bridge. Unsubscribe is idempotent, and released instances ignore late callbacks and do not fire completion events. Callbacks during native registration are also handled safely if the instance is released or unsubscribed immediately.
 
 Capability probes may be used before Init. `supportsAPI` returns false when unavailable. JavaScript `getCapabilities` throws `UNSUPPORTED` when no compatible bridge exists; the `CapabilitiesJSON` expression returns an empty string without triggering an event. Capability inspection grants no permission and performs no business API call. A listed sync API returning undefined means only that the call was made; for example, WeChat's `shareAppMessage` return value is not proof of a successful share. API kinds may differ between platforms.
 
@@ -131,12 +131,20 @@ await bridge.vibrate("short");
 
 Read-only state methods include `isReady()`, `getPlatform()`, `getLastError()`, `getLastErrorCode()`, `getLastOperation()`, `getLastLoginCode()`, and getters corresponding to the generic result/event expressions.
 
+## TikTok native APIs and payments
+
+Choose TikTok or Auto-detect, convert with `--platform tiktok`, and run inside TikTok Native Mini Games. Do not inject the HTML-runtime SDK or call `TTMinis.game.init()` for the native target. A matching method on Douyin does not establish TikTok support: consult the platform-specific catalog and `supportsAPI()`.
+
+The existing Call API action can invoke TikTok `pay` with an options object containing a backend-created `trade_order_id`; no new payment ACE is required. A successful client callback only completes the client payment flow. It must never grant an item or mark an order fulfilled. Use your authenticated backend to verify Webhook signatures, validate the order and perform idempotent fulfillment, then query that backend for the authoritative status. Pending or timed-out queries remain pending; after cancellation/failure create a new order instead of automatically repeating payment with the old order.
+
+The runtime bridge also exposes `globalThis.C3MiniGameBridge.pay(options, control)` with an explicitly unconfirmed fulfillment result. This is a runtime helper, not an addon instance method. See [TikTok IAP](../docs/TIKTOK-IAP.md) for the client/backend boundary and polling helper. TikTok IDE, device and real-payment validation remain incomplete. Common shortcut actions are still conditional on platform capabilities; unsupported UI APIs are not mapped to another platform.
+
 ## Adapter contract and provenance
 
 The converter installs `globalThis.C3MiniGameBridge` with the six generic API methods above, plus:
 
 ```ts
-init(options: { platform: "auto" | "douyin" | "wechat"; scoreEndpoint: string }): Promise<unknown>;
+init(options: { platform: "auto" | "douyin" | "wechat" | "tiktok"; scoreEndpoint: string }): Promise<unknown>;
 login(): Promise<{ platform: string; code?: string; session?: unknown }>;
 showRewardedVideo(options: { adUnitId: string }): Promise<{ platform: string; completed: boolean }>;
 reportScore(options: { score: number; leaderboardId: string }): Promise<unknown>;

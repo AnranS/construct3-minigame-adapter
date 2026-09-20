@@ -39,7 +39,7 @@ function draw(now) {
   context.fillStyle = '#90b9c6'; context.font = '12px sans-serif'; context.textAlign = 'left';
   context.fillText('CONSTRUCT 3 / ADAPTER CHECK', 28, 43);
   context.fillStyle = '#f5f6f0'; context.font = 'bold 30px sans-serif';
-  context.fillText(adapter.platform === 'wechat' ? 'WECHAT' : 'DOUYIN', 28, 88);
+  context.fillText(({wechat: 'WECHAT', douyin: 'DOUYIN', tiktok: 'TIKTOK'}[adapter.platform] || adapter.platform), 28, 88);
   context.fillStyle = '#b1bfc3'; context.font = '14px sans-serif';
   context.fillText('Tap anywhere. Your count is saved locally.', 28, 118);
   const radius = touching ? 86 : 76 + Math.sin(time * 2) * 4;

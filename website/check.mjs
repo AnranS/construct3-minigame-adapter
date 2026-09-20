@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {parse} from 'parse5';
+import {getAPICatalog, API_PLATFORMS} from './api-catalog.mjs';
 
 const siteRoot = fileURLToPath(new URL('../dist/site/', import.meta.url));
 const base = '/construct3-minigame-adapter/';
@@ -22,7 +23,7 @@ async function walk(directory) {
 const files = new Set(await walk(siteRoot));
 const documents = new Map();
 for (const filename of [...files].filter(name => name.endsWith('.html'))) {
-  const document = {ids: new Set(), anchors: new Set(), links: [], apiRows: 0};
+  const document = {ids: new Set(), anchors: new Set(), links: [], apiRows: 0, platformColumns: new Set(), platformOptions: new Set()};
   const tree = parse(await fs.readFile(path.join(siteRoot, filename), 'utf8'));
   function visit(node) {
     const attributes = Object.fromEntries((node.attrs ?? []).map(({name, value}) => [name, value]));
@@ -33,6 +34,8 @@ for (const filename of [...files].filter(name => name.endsWith('.html'))) {
     }
     if (node.tagName === 'a' && attributes.name) document.anchors.add(attributes.name);
     if (node.tagName === 'tr' && Object.hasOwn(attributes, 'data-api-row')) document.apiRows++;
+    if (node.tagName === 'th' && attributes['data-platform-column']) document.platformColumns.add(attributes['data-platform-column']);
+    if (node.tagName === 'option' && API_PLATFORMS.includes(attributes.value)) document.platformOptions.add(attributes.value);
     for (const attribute of ['href', 'src']) {
       if (Object.hasOwn(attributes, attribute)) document.links.push({attribute, value: attributes[attribute]});
     }
@@ -47,7 +50,7 @@ for (const filename of ['index.html', '404.html']) {
   if (!documents.has(filename)) errors.push(`Missing page: ${filename}`);
 }
 const pages = new Map();
-for (const name of ['guide', 'addon', 'api', 'troubleshooting', 'validation']) {
+for (const name of ['guide', 'addon', 'api', 'tiktok-iap', 'troubleshooting', 'validation']) {
   const filename = [`${name}/index.html`, `${name}.html`].find(candidate => documents.has(candidate));
   if (!filename) errors.push(`Missing page: ${name}`);
   else pages.set(name, filename);
@@ -95,7 +98,13 @@ for (const filename of ['downloads/C3MiniGameBridge.c3addon', 'downloads/MiniGam
   else if ((await fs.stat(path.join(siteRoot, filename))).size === 0) errors.push(`Empty download: ${filename}`);
 }
 const apiRows = documents.get(pages.get('api'))?.apiRows ?? 0;
-if (apiRows !== 171) errors.push(`API table must contain 171 tr[data-api-row] rows; found ${apiRows}`);
+const expectedAPIRows = getAPICatalog().length;
+if (apiRows !== expectedAPIRows) errors.push(`API table must contain ${expectedAPIRows} tr[data-api-row] rows; found ${apiRows}`);
+for (const platform of API_PLATFORMS) {
+  const apiDocument = documents.get(pages.get('api'));
+  if (!apiDocument?.platformColumns.has(platform)) errors.push(`Missing API platform contract column: ${platform}`);
+  if (!apiDocument?.platformOptions.has(platform)) errors.push(`Missing API platform filter: ${platform}`);
+}
 
 if (errors.length) {
   console.error(`Documentation check failed (${errors.length} issues):\n${errors.map(error => `- ${error}`).join('\n')}`);

@@ -13,6 +13,6 @@ export function engineScopeBuildOptions(platform) {
       ...Object.fromEntries(globals.map(name => [name, `__c3EngineScope.${name}`]))
     },
     banner: {js: `(function(__c3NativeHost, __c3NativeBindings) {\nconst __c3EngineScope = (${createEngineScope.toString()})(__c3NativeHost, {platform: ${JSON.stringify(platform)}, nativeBindings: __c3NativeBindings});\n__c3NativeHost.__C3MiniGameScope = __c3EngineScope;`},
-    footer: {js: `\n})(typeof GameGlobal !== 'undefined' ? GameGlobal : globalThis, {wx: typeof wx !== 'undefined' ? wx : undefined, tt: typeof tt !== 'undefined' ? tt : undefined, WebAssembly: typeof WebAssembly !== 'undefined' ? WebAssembly : undefined, WXWebAssembly: typeof WXWebAssembly !== 'undefined' ? WXWebAssembly : undefined, TTWebAssembly: typeof TTWebAssembly !== 'undefined' ? TTWebAssembly : undefined});`}
+    footer: {js: `\n})(typeof GameGlobal !== 'undefined' ? GameGlobal : globalThis, {wx: typeof wx !== 'undefined' ? wx : undefined, tt: typeof tt !== 'undefined' ? tt : undefined, TTMinis: typeof TTMinis !== 'undefined' ? TTMinis : undefined, WebAssembly: typeof WebAssembly !== 'undefined' ? WebAssembly : undefined, WXWebAssembly: typeof WXWebAssembly !== 'undefined' ? WXWebAssembly : undefined, TTWebAssembly: typeof TTWebAssembly !== 'undefined' ? TTWebAssembly : undefined});`}
   };
 }

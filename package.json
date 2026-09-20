@@ -1,9 +1,9 @@
 {
   "name": "construct3-minigame-adapter",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "Construct 3 addon, runtime adapter and experimental WeChat/Douyin mini-game build tools",
+  "description": "Construct 3 addon, runtime adapter and experimental WeChat/Douyin/TikTok mini-game build tools",
   "engines": {
     "node": ">=22"
   },
@@ -17,6 +17,7 @@
     "build:demo": "node scripts/build-demo.mjs",
     "export:wechat": "node src/cli.mjs convert --input examples/construct/api-demo-html5 --output dist/construct-wechat --platform wechat --experimental --overwrite",
     "export:douyin": "node src/cli.mjs convert --input examples/construct/api-demo-html5 --output dist/construct-douyin --platform douyin --experimental --overwrite",
+    "export:tiktok": "node src/cli.mjs convert --input examples/construct/api-demo-html5 --output dist/construct-tiktok --platform tiktok --experimental --overwrite",
     "build": "npm run build:addon && npm run build:demo",
     "inspect": "node src/cli.mjs inspect",
     "convert": "node src/cli.mjs convert",

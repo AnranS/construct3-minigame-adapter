@@ -10,6 +10,7 @@ examples/construct/html5/
 examples/construct/api-demo-html5/
 examples/construct/*-html5.zip
 examples/construct/archive/*-html5.zip
+examples/construct/archive/v0.2-before-0.3-*/
 project.private.config.json
 .env
 .env.*

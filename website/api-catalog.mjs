@@ -20,11 +20,17 @@ export const API_CATEGORY_LABELS = Object.freeze({
   ads: '广告',
   'open-data': '开放数据与榜单',
   buttons: '原生按钮',
-  analytics: '数据分析'
+  analytics: '数据分析',
+  payment: '支付',
+  payments: '支付',
+  subpackage: '分包加载',
+  subpackages: '分包加载'
 });
 
-const platformOrder = ['wechat', 'douyin'];
-const platformLabels = { wechat: '微信', douyin: '抖音' };
+export const API_PLATFORMS = Object.freeze(['wechat', 'douyin', 'tiktok']);
+export const API_PLATFORM_LABELS = Object.freeze({ wechat: '微信', douyin: '抖音', tiktok: 'TikTok' });
+const platformOrder = API_PLATFORMS;
+const platformLabels = API_PLATFORM_LABELS;
 
 /**
  * One row per exact native name, generated from the runtime directory.
@@ -42,7 +48,8 @@ export function getAPICatalog() {
         name: entry.name,
         category: entry.category,
         categoryLabel: API_CATEGORY_LABELS[entry.category] || entry.category,
-        kinds: { wechat: null, douyin: null },
+        kinds: Object.fromEntries(platformOrder.map(platform => [platform, null])),
+        contracts: {},
         platforms: [],
         notes: '',
         metadata: {}
@@ -91,8 +98,32 @@ export function getAPICatalog() {
         notes.push(`${platformLabels[platform]}不提供完成回调，返回值不代表分享成功`);
       }
     }
+    for (const platform of row.platforms) {
+      const metadata = row.metadata[platform];
+      const contract = [];
+      if (metadata.offMode === 'all') contract.push('宿主取消接口影响全部监听；桥接仅停用自身回调');
+      else if (metadata.offMode === 'none') contract.push('无原生撤销接口；桥接仅停用自身回调');
+      else if (metadata.off) contract.push(`需 ${metadata.off} 撤销订阅`);
+      if (metadata.executionScope === 'open-data') contract.push('仅开放数据域');
+      if (metadata.noOptions) contract.push('不传 options');
+      if (metadata.interaction) contract.push('默认不设超时');
+      if (metadata.completion === 'not-observable') contract.push('无完成回调，不能确认分享成功');
+      if (metadata.completion === 'client-callback-only') contract.push('客户端回调不确认付款/发货');
+      if (platform === 'tiktok' && row.name === 'pay') contract.push('参数 trade_order_id');
+      if (['wechat', 'tiktok'].includes(platform) && row.name === 'showKeyboard') contract.push('快捷动作显式 keyboardType: text');
+      row.contracts[platform] = contract;
+    }
     row.notes = notes.join('。');
   }
 
   return [...rows.values()];
+}
+
+export function getAPISummary() {
+  const rows = getAPICatalog();
+  return {
+    names: rows.length,
+    categories: new Set(rows.map(row => row.category)).size,
+    platforms: Object.fromEntries(API_PLATFORMS.map(platform => [platform, rows.filter(row => row.kinds[platform]).length]))
+  };
 }
