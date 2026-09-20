@@ -1,5 +1,27 @@
 const sharedEventHubs = new WeakMap();
 
+// The permanently retained native dispatcher must be created in a scope that
+// never holds a subscriber. Shared closure contexts could otherwise retain the
+// first callback (and its DOM) even after it is removed from hub.listeners.
+function createEventHub() {
+  const hub = {listeners: new Set(), failed: false, failure: null};
+  hub.dispatch = function (...args) {
+    let result;
+    const failures = [];
+    for (const callback of [...hub.listeners]) {
+      if (!hub.listeners.has(callback)) continue;
+      try {
+        const value = callback.apply(this, args);
+        if (value !== undefined) result = value;
+      } catch (failure) { failures.push(failure); }
+    }
+    if (failures.length === 1) throw failures[0];
+    if (failures.length) throw new AggregateError(failures, 'Platform event callbacks failed');
+    return result;
+  };
+  return hub;
+}
+
 /** Native APIs with no listener-specific off keep one inert dispatcher per host.
  * Removing a subscription only releases its local callback. Never call a global
  * off method: doing so would remove listeners owned by other engine/plugins.
@@ -16,22 +38,9 @@ export function subscribeSharedEvent(api, entry, listener) {
     return () => hub.listeners.delete(listener);
   }
 
-  hub = {listeners: new Set([listener]), failed: false, failure: null};
+  hub = createEventHub();
+  hub.listeners.add(listener);
   hubs.set(entry.name, hub);
-  hub.dispatch = function (...args) {
-    let result;
-    const failures = [];
-    for (const callback of [...hub.listeners]) {
-      if (!hub.listeners.has(callback)) continue;
-      try {
-        const value = callback.apply(this, args);
-        if (value !== undefined) result = value;
-      } catch (failure) { failures.push(failure); }
-    }
-    if (failures.length === 1) throw failures[0];
-    if (failures.length) throw new AggregateError(failures, 'Platform event callbacks failed');
-    return result;
-  };
   try { api[entry.name].call(api, hub.dispatch); }
   catch (failure) {
     hub.listeners.clear();
@@ -42,4 +51,3 @@ export function subscribeSharedEvent(api, entry, listener) {
   }
   return () => hub.listeners.delete(listener);
 }
-
