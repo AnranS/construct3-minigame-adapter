@@ -1,0 +1,448 @@
+{
+  "$schema": "../schemas/plugin.lang.schema.json",
+  "languageTag": "en-US",
+  "fileDescription": "MiniGameBridge editor strings.",
+  "text": {
+    "plugins": {
+      "c3minigamebridge": {
+        "name": "MiniGameBridge",
+        "description": "Bridge to WeChat and Douyin host capabilities through the companion adapter.",
+        "help-url": "https://www.construct.net/en/make-games/manuals/addon-sdk",
+        "properties": {
+          "platform": {
+            "name": "Platform",
+            "desc": "Auto-detect the host, or require a specific platform.",
+            "items": {
+              "auto": "Auto-detect",
+              "douyin": "Douyin",
+              "wechat": "WeChat"
+            }
+          },
+          "score-endpoint": {
+            "name": "Score endpoint",
+            "desc": "Your HTTPS score submission endpoint. Leave blank to disable score reporting. No platform app secret belongs here."
+          }
+        },
+        "aceCategories": {
+          "bridge": "Mini game bridge"
+        },
+        "conditions": {
+          "on-ready": {
+            "list-name": "On ready",
+            "display-text": "On ready",
+            "description": "The companion bridge initialized in a supported mini game host."
+          },
+          "on-login-succeeded": {
+            "list-name": "On login succeeded",
+            "display-text": "On login succeeded",
+            "description": "The platform returned a one-time login code, or a configured server returned a session. This is not a verified server identity by itself."
+          },
+          "on-ad-completed": {
+            "list-name": "On ad completed",
+            "display-text": "On ad completed",
+            "description": "The host explicitly confirmed a complete rewarded video. Only this condition should grant a reward."
+          },
+          "on-ad-cancelled": {
+            "list-name": "On ad cancelled",
+            "display-text": "On ad cancelled",
+            "description": "The rewarded video closed without completing; do not grant a reward."
+          },
+          "on-score-reported": {
+            "list-name": "On score reported",
+            "display-text": "On score reported",
+            "description": "The configured score endpoint accepted the request."
+          },
+          "on-vibration-completed": {
+            "list-name": "On vibration completed",
+            "display-text": "On vibration completed",
+            "description": "The host accepted the vibration request."
+          },
+          "on-error": {
+            "list-name": "On error",
+            "display-text": "On error",
+            "description": "An operation failed. Inspect LastError, LastErrorCode and LastOperation; generic API operations also provide LastAPIName and LastAPITag."
+          },
+          "is-ready": {
+            "list-name": "Is ready",
+            "display-text": "Is ready",
+            "description": "The bridge successfully initialized."
+          },
+          "on-api-succeeded": {
+            "description": "An API call, synchronous read or subscription action succeeded. Read LastAPIName, LastResultJSON and LastResultIsJSON.",
+            "list-name": "On API succeeded",
+            "display-text": "On API succeeded (tag [i]{0}[/i])",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "on-api-event": {
+            "description": "A subscribed native event arrived. Read LastAPIName, LastEventJSON and LastEventIsJSON.",
+            "list-name": "On API event",
+            "display-text": "On API event (tag [i]{0}[/i])",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "supports-api": {
+            "description": "Check whether this registered API is available in the current host. This does not grant permissions or invoke the API.",
+            "list-name": "Supports API",
+            "display-text": "Supports API [i]{0}[/i]",
+            "params": {
+              "api-name": {
+                "name": "API name",
+                "desc": "The exact registered platform API name. Case-sensitive."
+              }
+            }
+          }
+        },
+        "actions": {
+          "init": {
+            "list-name": "Init",
+            "display-text": "Init",
+            "description": "Initialize using the Platform and Score endpoint properties. Wait for On ready."
+          },
+          "login": {
+            "list-name": "Login",
+            "display-text": "Login",
+            "description": "Obtain a one-time platform login code. No code is sent automatically by this plugin."
+          },
+          "show-rewarded-video": {
+            "list-name": "Show rewarded video",
+            "display-text": "Show rewarded video [i]{0}[/i]",
+            "description": "Display a platform rewarded video ad. Requires a real ad unit ID.",
+            "params": {
+              "ad-unit-id": {
+                "name": "Ad unit ID",
+                "desc": "The rewarded video ad unit ID issued by the selected platform."
+              }
+            }
+          },
+          "report-score": {
+            "list-name": "Report score",
+            "display-text": "Report score [i]{0}[/i] to leaderboard [i]{1}[/i]",
+            "description": "Send a score to the configured HTTPS score endpoint.",
+            "params": {
+              "score": {
+                "name": "Score",
+                "desc": "The numeric score to submit."
+              },
+              "leaderboard-id": {
+                "name": "Leaderboard ID",
+                "desc": "An optional application leaderboard identifier."
+              }
+            }
+          },
+          "vibrate": {
+            "list-name": "Vibrate",
+            "display-text": "Vibrate ({0})",
+            "description": "Request a short or long platform vibration.",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Vibration length.",
+                "items": {
+                  "short": "Short",
+                  "long": "Long"
+                }
+              }
+            }
+          },
+          "call-api": {
+            "description": "Invoke a registered callback API. JSON options must be an object. Success and failure carry the supplied tag.",
+            "list-name": "Call API",
+            "display-text": "Call API [i]{0}[/i] with JSON [i]{1}[/i] (tag [i]{2}[/i])",
+            "params": {
+              "api-name": {
+                "name": "API name",
+                "desc": "The exact registered platform API name. Case-sensitive."
+              },
+              "options-json": {
+                "name": "Options JSON",
+                "desc": "A JSON object containing platform API options."
+              },
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "read-api-sync": {
+            "description": "Invoke a registered synchronous API with positional JSON arguments. Observe On API succeeded or On error.",
+            "list-name": "Read synchronous API",
+            "display-text": "Read API [i]{0}[/i] with JSON arguments [i]{1}[/i] (tag [i]{2}[/i])",
+            "params": {
+              "api-name": {
+                "name": "API name",
+                "desc": "The exact registered platform API name. Case-sensitive."
+              },
+              "args-json": {
+                "name": "Arguments JSON",
+                "desc": "A JSON array passed as positional arguments, such as [\"key\"]."
+              },
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "subscribe-api-event": {
+            "description": "Subscribe to a registered native event. Repeating the same name and tag replaces that subscription; other tags remain independent.",
+            "list-name": "Subscribe to API event",
+            "display-text": "Subscribe to [i]{0}[/i] (tag [i]{1}[/i])",
+            "params": {
+              "event-name": {
+                "name": "Event name",
+                "desc": "The exact on-event name, such as onKeyboardInput. Both on and off support are required."
+              },
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "unsubscribe-api-event": {
+            "description": "Remove only this instance's subscription with the matching name and tag. The result states whether one existed.",
+            "list-name": "Unsubscribe from API event",
+            "display-text": "Unsubscribe from [i]{0}[/i] (tag [i]{1}[/i])",
+            "params": {
+              "event-name": {
+                "name": "Event name",
+                "desc": "The exact on-event name, such as onKeyboardInput. Both on and off support are required."
+              },
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "show-toast": {
+            "description": "Call the native showToast API with no icon.",
+            "list-name": "Show toast",
+            "display-text": "Show toast [i]{0}[/i] for {1} ms (tag [i]{2}[/i])",
+            "params": {
+              "title": {
+                "name": "Title",
+                "desc": "Toast text."
+              },
+              "duration": {
+                "name": "Duration",
+                "desc": "Duration in milliseconds."
+              },
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "show-modal": {
+            "description": "Call native showModal. Read confirm/cancel in LastResultJSON; a cancelled dialog is not a platform failure.",
+            "list-name": "Show modal",
+            "display-text": "Show modal [i]{0}[/i]: [i]{1}[/i], cancel button {2} (tag [i]{3}[/i])",
+            "params": {
+              "title": {
+                "name": "Title",
+                "desc": "Dialog title."
+              },
+              "content": {
+                "name": "Content",
+                "desc": "Dialog content."
+              },
+              "show-cancel": {
+                "name": "Show cancel",
+                "desc": "Whether to show the cancel button.",
+                "items": {
+                  "no": "No",
+                  "yes": "Yes"
+                }
+              },
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "set-storage": {
+            "description": "Call native setStorage with the parsed JSON value. Keys are platform-native, not automatically prefixed by this addon.",
+            "list-name": "Write storage",
+            "display-text": "Store JSON [i]{1}[/i] at [i]{0}[/i] (tag [i]{2}[/i])",
+            "params": {
+              "key": {
+                "name": "Key",
+                "desc": "The platform storage key used by your project."
+              },
+              "value-json": {
+                "name": "Value JSON",
+                "desc": "Any valid JSON value to store."
+              },
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "get-storage": {
+            "description": "Call native getStorage. Missing-key behavior follows the platform and can trigger On error.",
+            "list-name": "Read storage",
+            "display-text": "Read storage [i]{0}[/i] (tag [i]{1}[/i])",
+            "params": {
+              "key": {
+                "name": "Key",
+                "desc": "The platform storage key used by your project."
+              },
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "remove-storage": {
+            "description": "Call native removeStorage for the specified key.",
+            "list-name": "Remove storage",
+            "display-text": "Remove storage [i]{0}[/i] (tag [i]{1}[/i])",
+            "params": {
+              "key": {
+                "name": "Key",
+                "desc": "The platform storage key used by your project."
+              },
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "get-network-type": {
+            "description": "Call native getNetworkType.",
+            "list-name": "Get network type",
+            "display-text": "Get network type (tag [i]{0}[/i])",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "set-clipboard": {
+            "description": "Call native setClipboardData when explicitly requested by this action.",
+            "list-name": "Write clipboard",
+            "display-text": "Write clipboard [i]{0}[/i] (tag [i]{1}[/i])",
+            "params": {
+              "text": {
+                "name": "Text",
+                "desc": "Text to copy."
+              },
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "get-clipboard": {
+            "description": "Call native getClipboardData when explicitly requested by this action. May require platform permission or show native UI.",
+            "list-name": "Read clipboard",
+            "display-text": "Read clipboard (tag [i]{0}[/i])",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "show-keyboard": {
+            "description": "Call native showKeyboard for single-line input. Subscribe to onKeyboardInput/onKeyboardConfirm/onKeyboardComplete separately.",
+            "list-name": "Show keyboard",
+            "display-text": "Show keyboard with [i]{0}[/i], maximum {1} characters (tag [i]{2}[/i])",
+            "params": {
+              "value": {
+                "name": "Initial value",
+                "desc": "Initial keyboard text."
+              },
+              "max-length": {
+                "name": "Maximum length",
+                "desc": "Maximum text length."
+              },
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          },
+          "hide-keyboard": {
+            "description": "Call native hideKeyboard.",
+            "list-name": "Hide keyboard",
+            "display-text": "Hide keyboard (tag [i]{0}[/i])",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "Case-sensitive event tag. Use a distinct tag to distinguish concurrent operations or subscriptions."
+              }
+            }
+          }
+        },
+        "expressions": {
+          "platform": {
+            "translated-name": "Platform",
+            "description": "Detected platform: douyin, wechat, or unsupported."
+          },
+          "last-error": {
+            "translated-name": "LastError",
+            "description": "The latest error as [code] message."
+          },
+          "last-error-code": {
+            "translated-name": "LastErrorCode",
+            "description": "The latest machine-readable error code."
+          },
+          "last-operation": {
+            "translated-name": "LastOperation",
+            "description": "The operation associated with the latest result or error."
+          },
+          "last-login-code": {
+            "translated-name": "LastLoginCode",
+            "description": "The most recent one-time platform login code, held only in memory. It is not proof of authenticated server identity."
+          },
+          "last-api-name": {
+            "description": "API or event name associated with the current trigger, otherwise the latest API result.",
+            "translated-name": "LastAPIName"
+          },
+          "last-api-tag": {
+            "description": "Tag associated with the current trigger, otherwise the latest API result.",
+            "translated-name": "LastAPITag"
+          },
+          "last-result-json": {
+            "description": "Lossless JSON for the latest API result, or an empty string when it is not JSON data. Check LastResultIsJSON.",
+            "translated-name": "LastResultJSON"
+          },
+          "last-result-is-json": {
+            "description": "1 when LastResultJSON contains valid lossless JSON; 0 for undefined, native objects, bytes or other non-JSON results.",
+            "translated-name": "LastResultIsJSON"
+          },
+          "last-result-type": {
+            "description": "Result type: null, array, or JavaScript typeof. Objects may be non-JSON; use LastResultIsJSON.",
+            "translated-name": "LastResultType"
+          },
+          "last-event-json": {
+            "description": "Lossless JSON for the current/latest event data, or empty when it is not JSON data.",
+            "translated-name": "LastEventJSON"
+          },
+          "last-event-is-json": {
+            "description": "1 when LastEventJSON contains valid lossless JSON; otherwise 0.",
+            "translated-name": "LastEventIsJSON"
+          },
+          "last-event-type": {
+            "description": "Event data type: null, array, or JavaScript typeof.",
+            "translated-name": "LastEventType"
+          },
+          "capabilities-json": {
+            "description": "JSON capability descriptors with name, kind and supported status. Empty string when the bridge is unavailable. Does not call platform APIs.",
+            "translated-name": "CapabilitiesJSON"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,605 @@
+{
+  "constructVersion": "r495.2",
+  "source": "Created and exported through the actual Construct editor UI in Chrome",
+  "updatedOn": "2026-09-20",
+  "platforms": [
+    "wechat",
+    "douyin"
+  ],
+  "editorExportComplete": true,
+  "latestProject": "examples/construct/MiniGameApiSuite.c3p",
+  "latestHTML5Archive": "examples/construct/MiniGameApiSuite-html5.zip",
+  "latestExtractedSource": "examples/construct/api-demo-html5",
+  "historicalProject": "examples/construct/archive/WeChatApiDemo-0.1.c3p",
+  "historicalHTML5Archive": "examples/construct/archive/WeChatApiDemo-0.1-html5.zip",
+  "wechatIDEImported": true,
+  "wechatRenderVerified": true,
+  "douyinIDERunVerified": false,
+  "deviceVerified": false,
+  "verificationScope": "Latest MiniGameApiSuite opened, saved and exported through the real Construct r495.2 editor UI; both platform builds complete. The latest WeChat IDE build rendered with WebGL2 and reached runtime-ready on iPhone 12 and iPad Pro 12.9 simulator profiles after full project reopen; 17 self-checks succeeded. This does not validate every API, external service, Douyin IDE or physical device.",
+  "builds": {
+    "wechat": {
+      "built": true,
+      "entry": "dist/construct-wechat/game.js",
+      "IDEImported": true,
+      "IDERenderVerified": true,
+      "deviceVerified": false,
+      "generatedAt": "2026-09-20T07:57:14.447Z",
+      "sourceProject": "examples/construct/MiniGameApiSuite.c3p",
+      "sourceArchive": "examples/construct/MiniGameApiSuite-html5.zip",
+      "IDEVerificationStatus": "render-and-self-checks-verified"
+    },
+    "douyin": {
+      "built": true,
+      "entry": "dist/construct-douyin/game.js",
+      "IDEImported": false,
+      "IDERenderVerified": false,
+      "deviceVerified": false,
+      "generatedAt": "2026-09-20T07:57:15.097Z",
+      "sourceProject": "examples/construct/MiniGameApiSuite.c3p",
+      "sourceArchive": "examples/construct/MiniGameApiSuite-html5.zip",
+      "IDEVerificationStatus": "not-run"
+    }
+  },
+  "wechatIDE": {
+    "status": "render-self-checks-and-selected-interactions-verified",
+    "project": "examples/construct/MiniGameApiSuite.c3p",
+    "version": "RC 2.02.2607161",
+    "baselineLibraryVersion": "3.15.3",
+    "IDEImported": true,
+    "IDERenderVerified": true,
+    "renderer": "WebGL2",
+    "runtimeReadyObserved": true,
+    "runtimeReadyEvidence": "The actual Construct runtime-ready signal was observed in the latest MiniGameApiSuite run.",
+    "startupErrors": 0,
+    "startupWarnings": 2,
+    "startupCountsAreLimitedToStartup": true,
+    "demoFeatureEntryCount": 51,
+    "demoCategoryCount": 11,
+    "simulatorProfiles": [
+      {
+        "name": "iPhone 12",
+        "fullProjectReopenConfirmed": true,
+        "renderVerified": true
+      },
+      {
+        "name": "iPad Pro 12.9",
+        "fullProjectReopenConfirmed": true,
+        "renderVerified": true
+      }
+    ],
+    "simulatorProfilesArePhysicalDevices": false,
+    "capabilityProbe": {
+      "supported": 133,
+      "catalogUniqueNames": 171,
+      "scope": "Native-method availability in this IDE host; not 133 successful business API calls."
+    },
+    "selfChecks": {
+      "total": 17,
+      "succeeded": 17,
+      "failed": 0,
+      "skipped": 0,
+      "observedInActualRuntime": true,
+      "consoleStatusReadbackConfirmed": true,
+      "scope": "Demo self-checks using device information, project-specific storage keys, temporary files and package resources; no direct permission request, sharing or external-network request."
+    },
+    "completeFunctionalityVerified": false,
+    "deviceVerified": false,
+    "note": "Latest MiniGameApiSuite rendering, all 17 self-checks and selected native interactions were verified in the WeChat IDE. Modal confirmation/cancellation callbacks work, but an IDE-internal Worker error remains unresolved. No Douyin IDE or physical-device acceptance is implied. Earlier 21-item demo evidence remains under historical.WeChatApiDemo.",
+    "interactionChecks": [
+      {
+        "name": "Toast",
+        "result": "Native toast shown; success callback observed."
+      },
+      {
+        "name": "ActionSheet",
+        "result": "Native three-item menu shown; second item returned tapIndex=1."
+      },
+      {
+        "name": "Loading",
+        "result": "Native spinner shown and hideLoading succeeded after one second."
+      },
+      {
+        "name": "vibrateShort/vibrateLong",
+        "result": "Both native success callbacks observed; physical vibration not verified."
+      },
+      {
+        "name": "Modal",
+        "result": "Native dialog shown; confirm and cancel=true callbacks observed; one IDE-internal worker path empty error remains."
+      },
+      {
+        "name": "Keyboard events",
+        "result": "Native keyboard shown; onKeyboardInput length 8 and onKeyboardComplete observed; completion closed keyboard. hideKeyboard succeeded after closure; proactive hiding while open not verified."
+      },
+      {
+        "name": "Audio stop",
+        "result": "Eight-second package audio started; stop before natural end produced onStop; destroy succeeded."
+      },
+      {
+        "name": "Audio end",
+        "result": "Second playback naturally completed and produced onEnded."
+      }
+    ],
+    "inputVerification": {
+      "regressionTests": 8,
+      "scope": "Native wheel forwarding, touch normalization and cleanup covered by automated regressions. Latest real IDE wheel scrolling and physical multi-touch remain unverified."
+    }
+  },
+  "unresolvedIssues": [
+    {
+      "id": "WECHAT_IDE_NATIVE_MODAL_WORKER_PATH_EMPTY",
+      "status": "unresolved",
+      "trigger": "Invoking native Modal in MiniGameApiSuite on WeChat IDE RC 2.02.2607161.",
+      "error": "worker path empty",
+      "reproducedLibraryVersions": [
+        "3.15.3",
+        "3.12.1"
+      ],
+      "nativeModalStillDisplayed": true,
+      "versionRollbackResolved": false,
+      "rootCauseConfirmed": true,
+      "deviceImpactVerified": false,
+      "notes": "The original native Worker request includes libName=WAAccelerateWorker.js. Local SimulatorCodeService.serveGameAppservice rebuilds the URL from subPath and drops the query, causing extraLibName to be undefined at the Worker compiler boundary. Current MiniGameApiSuite reproduced the error on library 3.15.3; confirm/cancel callbacks still return. No IDE source patch or error suppression was applied. Earlier library 3.12.1 comparison also reproduced the error.",
+      "evidenceProject": "examples/construct/MiniGameApiSuite.c3p",
+      "latestProjectRetested": true,
+      "observedWorkerRequestContainsLibName": true,
+      "observedWorkerLibName": "WAAccelerateWorker.js",
+      "rootCauseScope": "Read-only analysis of the locally installed IDE plus isolated execution of its URL parsing/routing functions; not an official vendor diagnosis or a live backend debugger trace."
+    }
+  ],
+  "archiveVerification": {
+    "archive": "examples/construct/MiniGameApiSuite-html5.zip",
+    "extractedDirectory": "examples/construct/api-demo-html5",
+    "archiveFileCount": 28,
+    "extractedFileCount": 28,
+    "comparison": "Every relative file path and full file content compared byte-for-byte.",
+    "allFilesIdentical": true,
+    "missingFiles": [],
+    "extraFiles": [],
+    "changedFiles": [],
+    "duplicateArchiveFileNames": false,
+    "originalExportModified": false,
+    "download": {
+      "path": "MiniGameApiSuite.zip",
+      "bytes": 583203,
+      "sha256": "7b0d3d3f8b4f6dd3485310d6169f529a08395d6d517dca9f4917cf72386730c6",
+      "identicalToCanonicalArchive": true
+    },
+    "extractedFiles": {
+      "appmanifest.json": {
+        "bytes": 748,
+        "sha256": "70593065e153873e054ee6faa80cdb5269a2802383bcb260d78cd9a50a8414a7"
+      },
+      "beep.wav": {
+        "bytes": 352844,
+        "sha256": "6626f4e83af8dc0194b79c68ada309a251e2e7b713402ef6ec9331b956910dde"
+      },
+      "data.json": {
+        "bytes": 1643,
+        "sha256": "517f454d226df45573bd8a133b608379d4f082e4b770f8811be916c684465ca1"
+      },
+      "icons/icon-128.png": {
+        "bytes": 22267,
+        "sha256": "a0dfb8f1510406d8ab1a3016a1d95edad0f556f3b66e061bc1fe831542b43ae8"
+      },
+      "icons/icon-16.png": {
+        "bytes": 16505,
+        "sha256": "3daaea4d23f58298988365d299330a7ffdb71dd98c0c6747e4a6e644f577e17f"
+      },
+      "icons/icon-256.png": {
+        "bytes": 28930,
+        "sha256": "aa47620b6cfc9d0125bdb0c7b934276c6d78d21f7ed8945cbe07bb9f83f90a4f"
+      },
+      "icons/icon-32.png": {
+        "bytes": 17541,
+        "sha256": "8048a578ca2558413c740c2912f601be10da83abdb53a7b110e54a829b789f05"
+      },
+      "icons/icon-512.png": {
+        "bytes": 30345,
+        "sha256": "8eaf76b355aa04ab2508a1ace235b0735dc29c2e0a519fdb1c2442f7c2b1c7b5"
+      },
+      "icons/icon-64.png": {
+        "bytes": 19120,
+        "sha256": "994743ea037f2db25147ad61d8508a291e3fd41e1abd583a25ba1945c7a98bca"
+      },
+      "icons/loading-logo.png": {
+        "bytes": 19120,
+        "sha256": "994743ea037f2db25147ad61d8508a291e3fd41e1abd583a25ba1945c7a98bca"
+      },
+      "index.html": {
+        "bytes": 1433,
+        "sha256": "a0d7dbd9c32129f964c44e72d55fd3a218ab64cb3c955ea8f07c33080ca2c200"
+      },
+      "scripts/c3main.js": {
+        "bytes": 135,
+        "sha256": "a91bc22aaa3585dc7db87f6675acddc6dfa7f22054a59ce22ee5c504211c64d8"
+      },
+      "scripts/c3runtime.js": {
+        "bytes": 1417601,
+        "sha256": "82dc42793575a97918602316770ff5c22bdb1786398d6015f46f5c6a17d64c1a"
+      },
+      "scripts/dispatchworker.js": {
+        "bytes": 3451,
+        "sha256": "dad4c4dbc5a124550a43d497d829b2b5f38619febd0deee28bf136017a216723"
+      },
+      "scripts/jobworker.js": {
+        "bytes": 2406,
+        "sha256": "5beca2dcd2915b2846192c20913133dfaa5ad6263194b6ad0f02cf7642a7dd51"
+      },
+      "scripts/main.js": {
+        "bytes": 54926,
+        "sha256": "ebeb53c2b56b0dad26da1a8af8b98c78a4cf1bb608d46ff8ef380a933e84cd5e"
+      },
+      "scripts/modernjscheck.js": {
+        "bytes": 153,
+        "sha256": "914af3dc0bb16c71e2be8fec8b8353fde0b4f8c49bcfd7c978020d7cf297ee23"
+      },
+      "scripts/objRefTable.js": {
+        "bytes": 331,
+        "sha256": "8db527e9d4c762d3f894a76447520489041b0f63e48b0c41b42c53ed225cec5b"
+      },
+      "scripts/plugins/C3MiniGameBridge/c3runtime/actions.js": {
+        "bytes": 2396,
+        "sha256": "e3a54f92be65b47cb57fcb2b0f61347916c35701bff4c510fbbcfc822ee42c81"
+      },
+      "scripts/plugins/C3MiniGameBridge/c3runtime/conditions.js": {
+        "bytes": 503,
+        "sha256": "97785c5bf3fddceb232b17290cd6802a99f3393983dcc391bae4e280657149b0"
+      },
+      "scripts/plugins/C3MiniGameBridge/c3runtime/expressions.js": {
+        "bytes": 814,
+        "sha256": "f3af90fb2ba7512258717952242c8882022f3361721fe86b0f64c9185d8ebab5"
+      },
+      "scripts/plugins/C3MiniGameBridge/c3runtime/instance.js": {
+        "bytes": 17170,
+        "sha256": "a98e51a840dbeb881033e3526164e84174453a65166577536a6a11411a9e886d"
+      },
+      "scripts/plugins/C3MiniGameBridge/c3runtime/main.js": {
+        "bytes": 142,
+        "sha256": "da68d013d4b03bbccf49c2a271415459f1d02bdda15fe77ffb27f15312435dce"
+      },
+      "scripts/plugins/C3MiniGameBridge/c3runtime/plugin.js": {
+        "bytes": 135,
+        "sha256": "932731e7f0821d365331e9fbd44380087d7779c6d44c2e54a18b2fec7b23c636"
+      },
+      "scripts/plugins/C3MiniGameBridge/c3runtime/type.js": {
+        "bytes": 158,
+        "sha256": "7797e343d302dc0944dd38ff5aca2b7cb983584e909d0f31fe171183ff1e0333"
+      },
+      "scripts/project/main.js": {
+        "bytes": 41132,
+        "sha256": "09ac2003da1e9468b95904ebd422ce8fbb07304fe8e72d460a253a5c9c097003"
+      },
+      "scripts/supportcheck.js": {
+        "bytes": 4799,
+        "sha256": "4bc0a02bc9f449938a58bf0b09c40736f700342467b8bcc68dd6d70fe6ebafa6"
+      },
+      "style.css": {
+        "bytes": 2130,
+        "sha256": "b4483fb5a92b151391f2212b9c1c3968928f2e3ff0c658d102ce57a9dff9da33"
+      }
+    }
+  },
+  "files": {
+    "dist/C3MiniGameBridge.c3addon": {
+      "bytes": 18660,
+      "sha256": "237e39528bb104058582a7530635381defbe736a52fa176cf9a172eb4662b99d"
+    },
+    "dist/construct-douyin/game.js": {
+      "bytes": 2483230,
+      "sha256": "6d7b35f39f869bd05c6fc37c72a1afc495d6614f406371c3862c1120d2d438b4"
+    },
+    "dist/construct-wechat/game.js": {
+      "bytes": 2483230,
+      "sha256": "1e6c1994ad92b8063724195b8e5b909b7fff7054a55880bfc83762d7af465c07"
+    },
+    "examples/construct/MiniGameApiSuite-html5.zip": {
+      "bytes": 583203,
+      "sha256": "7b0d3d3f8b4f6dd3485310d6169f529a08395d6d517dca9f4917cf72386730c6"
+    },
+    "examples/construct/MiniGameApiSuite.c3p": {
+      "bytes": 232854,
+      "sha256": "3ecf67070dc104c33d49ab908b2ab6e66307d6cbd2db9e4f3658a7261d7ea50e"
+    },
+    "examples/construct/MiniGameBridgeTest-html5.zip": {
+      "bytes": 517207,
+      "sha256": "722913847fbd5930953eb1c205367a743b8f6b9d2d41d928364c966ee7ab709e"
+    },
+    "examples/construct/MiniGameBridgeTest.c3p": {
+      "bytes": 166852,
+      "sha256": "7ebf578167e4c5f6ee6a9c9f7efaa23033aeb300f2e405f84a8574484d49cb61"
+    },
+    "examples/construct/WeChatApiDemo-html5.zip": {
+      "bytes": 524452,
+      "sha256": "73f8e7b2e4011fdd829197ee74f05b1fdffe69932106034d198a2a56574a7a97"
+    },
+    "examples/construct/WeChatApiDemo.c3p": {
+      "bytes": 177505,
+      "sha256": "297cd27e46c0c5494aed0cab816fdd3523e0fda3e698f1364970d759a18f0ea2"
+    },
+    "examples/construct/archive/WeChatApiDemo-0.1-html5.zip": {
+      "bytes": 524452,
+      "sha256": "73f8e7b2e4011fdd829197ee74f05b1fdffe69932106034d198a2a56574a7a97"
+    },
+    "examples/construct/archive/WeChatApiDemo-0.1.c3p": {
+      "bytes": 177505,
+      "sha256": "297cd27e46c0c5494aed0cab816fdd3523e0fda3e698f1364970d759a18f0ea2"
+    }
+  },
+  "automatedTests": {
+    "command": "npm test",
+    "passed": 213,
+    "failed": 0,
+    "evidence": "docs/VALIDATION.md"
+  },
+  "evidenceDocuments": [
+    "docs/VALIDATION.md",
+    "docs/WECHAT-DEBUGGING.md",
+    "docs/diagnostics/ide-worker-query-loss-evidence.md"
+  ],
+  "apiCatalog": {
+    "uniqueNames": 171,
+    "catalogEntries": 173,
+    "categories": 20,
+    "platforms": {
+      "wechat": {
+        "uniqueNames": 142
+      },
+      "douyin": {
+        "uniqueNames": 140
+      }
+    },
+    "commonNames": 111,
+    "source": "src/runtime/platform-api.js",
+    "verificationScope": "An explicit callable whitelist and native-method capability detection; not complete business, permission, IDE or physical-device validation."
+  },
+  "historical": {
+    "WeChatApiDemo": {
+      "constructVersion": "r495.2",
+      "source": "Created and exported through the actual Construct editor UI in Chrome",
+      "updatedOn": "2026-09-20",
+      "platforms": [
+        "wechat",
+        "douyin"
+      ],
+      "editorExportComplete": true,
+      "latestProject": "examples/construct/WeChatApiDemo.c3p",
+      "latestHTML5Archive": "examples/construct/WeChatApiDemo-html5.zip",
+      "latestExtractedSource": "examples/construct/api-demo-html5",
+      "historicalProject": "examples/construct/MiniGameBridgeTest.c3p",
+      "historicalHTML5Archive": "examples/construct/MiniGameBridgeTest-html5.zip",
+      "wechatIDEImported": true,
+      "wechatRenderVerified": true,
+      "douyinIDERunVerified": false,
+      "deviceVerified": false,
+      "verificationScope": "Real Construct editor export, both platform builds and WeChat IDE rendering; not complete platform API or physical-device acceptance.",
+      "builds": {
+        "wechat": {
+          "built": true,
+          "entry": "dist/construct-wechat/game.js",
+          "IDEImported": true,
+          "IDERenderVerified": true,
+          "deviceVerified": false
+        },
+        "douyin": {
+          "built": true,
+          "entry": "dist/construct-douyin/game.js",
+          "IDEImported": false,
+          "IDERenderVerified": false,
+          "deviceVerified": false
+        }
+      },
+      "wechatIDE": {
+        "version": "RC 2.02.2607161",
+        "baselineLibraryVersion": "3.15.3",
+        "renderer": "WebGL2",
+        "constructTextItemCount": 21,
+        "runtimeReadyObserved": true,
+        "runtimeReadyEvidence": "Actual Construct runtime-ready message received after the latest project was fully reopened.",
+        "startupWarnings": 2,
+        "startupErrors": 0,
+        "startupCountsExcludeLaterModalError": true,
+        "completeFunctionalityVerified": false,
+        "modalLibraryComparison": {
+          "libraryVersion": "3.12.1",
+          "fullProjectReopenConfirmed": true,
+          "sameErrorReproduced": true,
+          "completeFunctionalityVerified": false
+        }
+      },
+      "unresolvedIssues": [
+        {
+          "id": "WECHAT_IDE_NATIVE_MODAL_WORKER_PATH_EMPTY",
+          "status": "unresolved",
+          "trigger": "Invoking the native Modal in the actual exported WeChatApiDemo.",
+          "error": "worker path empty",
+          "reproducedLibraryVersions": [
+            "3.15.3",
+            "3.12.1"
+          ],
+          "nativeModalStillDisplayed": true,
+          "versionRollbackResolved": false,
+          "rootCauseConfirmed": false,
+          "deviceImpactVerified": false,
+          "notes": "The error stack is in the IDE app.asar. Native dialog display and normal startup do not establish that this issue is fixed."
+        }
+      ],
+      "archiveVerification": {
+        "archive": "examples/construct/WeChatApiDemo-html5.zip",
+        "extractedDirectory": "examples/construct/api-demo-html5",
+        "archiveFileCount": 28,
+        "extractedFileCount": 28,
+        "comparison": "Every relative file path and full file content compared byte-for-byte.",
+        "allFilesIdentical": true,
+        "missingFiles": [],
+        "extraFiles": [],
+        "changedFiles": [],
+        "originalExportModified": false,
+        "download": {
+          "path": "WeChatApiDemo (1).zip",
+          "bytes": 524452,
+          "sha256": "73f8e7b2e4011fdd829197ee74f05b1fdffe69932106034d198a2a56574a7a97",
+          "identicalToCanonicalArchive": true
+        },
+        "extractedFiles": {
+          "appmanifest.json": {
+            "bytes": 742,
+            "sha256": "78b3a1c628d4983edac1f8001a5a40f0786efd5cb23a30cdcb580843e0ffd858"
+          },
+          "beep.wav": {
+            "bytes": 13274,
+            "sha256": "498316009dc84d6b0c6d68b2e0c69710b686f80e43bb2da553f532ac780a14e5"
+          },
+          "data.json": {
+            "bytes": 1638,
+            "sha256": "7f73f76fcd8f4072978e43907707ffc72cdaeda284486f0fbb08a0cd85d13bd0"
+          },
+          "icons/icon-128.png": {
+            "bytes": 22267,
+            "sha256": "a0dfb8f1510406d8ab1a3016a1d95edad0f556f3b66e061bc1fe831542b43ae8"
+          },
+          "icons/icon-16.png": {
+            "bytes": 16505,
+            "sha256": "3daaea4d23f58298988365d299330a7ffdb71dd98c0c6747e4a6e644f577e17f"
+          },
+          "icons/icon-256.png": {
+            "bytes": 28930,
+            "sha256": "aa47620b6cfc9d0125bdb0c7b934276c6d78d21f7ed8945cbe07bb9f83f90a4f"
+          },
+          "icons/icon-32.png": {
+            "bytes": 17541,
+            "sha256": "8048a578ca2558413c740c2912f601be10da83abdb53a7b110e54a829b789f05"
+          },
+          "icons/icon-512.png": {
+            "bytes": 30345,
+            "sha256": "8eaf76b355aa04ab2508a1ace235b0735dc29c2e0a519fdb1c2442f7c2b1c7b5"
+          },
+          "icons/icon-64.png": {
+            "bytes": 19120,
+            "sha256": "994743ea037f2db25147ad61d8508a291e3fd41e1abd583a25ba1945c7a98bca"
+          },
+          "icons/loading-logo.png": {
+            "bytes": 19120,
+            "sha256": "994743ea037f2db25147ad61d8508a291e3fd41e1abd583a25ba1945c7a98bca"
+          },
+          "index.html": {
+            "bytes": 1430,
+            "sha256": "f78bbc7c9635dc9c7381596fed545056ba1eaae195facec75d7bbd3231763c39"
+          },
+          "scripts/c3main.js": {
+            "bytes": 135,
+            "sha256": "a91bc22aaa3585dc7db87f6675acddc6dfa7f22054a59ce22ee5c504211c64d8"
+          },
+          "scripts/c3runtime.js": {
+            "bytes": 1417601,
+            "sha256": "82dc42793575a97918602316770ff5c22bdb1786398d6015f46f5c6a17d64c1a"
+          },
+          "scripts/dispatchworker.js": {
+            "bytes": 3451,
+            "sha256": "dad4c4dbc5a124550a43d497d829b2b5f38619febd0deee28bf136017a216723"
+          },
+          "scripts/jobworker.js": {
+            "bytes": 2406,
+            "sha256": "5beca2dcd2915b2846192c20913133dfaa5ad6263194b6ad0f02cf7642a7dd51"
+          },
+          "scripts/main.js": {
+            "bytes": 54926,
+            "sha256": "ebeb53c2b56b0dad26da1a8af8b98c78a4cf1bb608d46ff8ef380a933e84cd5e"
+          },
+          "scripts/modernjscheck.js": {
+            "bytes": 153,
+            "sha256": "914af3dc0bb16c71e2be8fec8b8353fde0b4f8c49bcfd7c978020d7cf297ee23"
+          },
+          "scripts/objRefTable.js": {
+            "bytes": 331,
+            "sha256": "8db527e9d4c762d3f894a76447520489041b0f63e48b0c41b42c53ed225cec5b"
+          },
+          "scripts/plugins/C3MiniGameBridge/c3runtime/actions.js": {
+            "bytes": 605,
+            "sha256": "9406df051fcfbcdb1cf59092c544bcf02bf02d7a243e0c09a6921658f2f8aa33"
+          },
+          "scripts/plugins/C3MiniGameBridge/c3runtime/conditions.js": {
+            "bytes": 334,
+            "sha256": "b1e8541a0b6e7ce451563aef322e8ef2482eb37ac574728512a0a254a4c2d280"
+          },
+          "scripts/plugins/C3MiniGameBridge/c3runtime/expressions.js": {
+            "bytes": 302,
+            "sha256": "41c9f088d0b2460f997ee18db336ffb3e2ffcb9f31f0836881b34eaf89b22bea"
+          },
+          "scripts/plugins/C3MiniGameBridge/c3runtime/instance.js": {
+            "bytes": 5128,
+            "sha256": "90025b08373bb8e677e1de7c39f1e91ce8637b51b8a15a85b37af3a62be303f1"
+          },
+          "scripts/plugins/C3MiniGameBridge/c3runtime/main.js": {
+            "bytes": 142,
+            "sha256": "da68d013d4b03bbccf49c2a271415459f1d02bdda15fe77ffb27f15312435dce"
+          },
+          "scripts/plugins/C3MiniGameBridge/c3runtime/plugin.js": {
+            "bytes": 135,
+            "sha256": "932731e7f0821d365331e9fbd44380087d7779c6d44c2e54a18b2fec7b23c636"
+          },
+          "scripts/plugins/C3MiniGameBridge/c3runtime/type.js": {
+            "bytes": 158,
+            "sha256": "7797e343d302dc0944dd38ff5aca2b7cb983584e909d0f31fe171183ff1e0333"
+          },
+          "scripts/project/main.js": {
+            "bytes": 24724,
+            "sha256": "4635747045262927cab7e12cf08f21373cd44f14cc626e3870b7086936a78663"
+          },
+          "scripts/supportcheck.js": {
+            "bytes": 4799,
+            "sha256": "4bc0a02bc9f449938a58bf0b09c40736f700342467b8bcc68dd6d70fe6ebafa6"
+          },
+          "style.css": {
+            "bytes": 2130,
+            "sha256": "b4483fb5a92b151391f2212b9c1c3968928f2e3ff0c658d102ce57a9dff9da33"
+          }
+        }
+      },
+      "files": {
+        "examples/construct/MiniGameBridgeTest.c3p": {
+          "bytes": 166852,
+          "sha256": "7ebf578167e4c5f6ee6a9c9f7efaa23033aeb300f2e405f84a8574484d49cb61"
+        },
+        "examples/construct/MiniGameBridgeTest-html5.zip": {
+          "bytes": 517207,
+          "sha256": "722913847fbd5930953eb1c205367a743b8f6b9d2d41d928364c966ee7ab709e"
+        },
+        "examples/construct/WeChatApiDemo.c3p": {
+          "bytes": 177505,
+          "sha256": "297cd27e46c0c5494aed0cab816fdd3523e0fda3e698f1364970d759a18f0ea2"
+        },
+        "examples/construct/WeChatApiDemo-html5.zip": {
+          "bytes": 524452,
+          "sha256": "73f8e7b2e4011fdd829197ee74f05b1fdffe69932106034d198a2a56574a7a97"
+        },
+        "dist/C3MiniGameBridge.c3addon": {
+          "bytes": 9419,
+          "sha256": "7b71aa9c01237f3245ad4c24c5407487fbaea30b4aaaa185907b3e76c23dab60"
+        },
+        "dist/construct-wechat/game.js": {
+          "bytes": 2412151,
+          "sha256": "142ba5bc29a25813364eec75113129fc6384ff420f240f3172c41cbf27936cc9"
+        },
+        "dist/construct-douyin/game.js": {
+          "bytes": 2412151,
+          "sha256": "b3b6fa55d663c97542cf45d9d54108152355168cc66a0e344478e67bcf292a71"
+        }
+      },
+      "automatedTests": {
+        "command": "npm test",
+        "passed": 113,
+        "failed": 0,
+        "evidence": "docs/VALIDATION.md"
+      },
+      "evidenceDocuments": [
+        "docs/VALIDATION.md",
+        "docs/WECHAT-DEBUGGING.md"
+      ],
+      "recordStatus": "historical",
+      "scopeNote": "Preserved evidence for the earlier 21-item WeChatApiDemo export. Its IDE results and old build hashes do not describe the latest MiniGameApiSuite build.",
+      "archivedProject": "examples/construct/archive/WeChatApiDemo-0.1.c3p",
+      "archivedHTML5Archive": "examples/construct/archive/WeChatApiDemo-0.1-html5.zip"
+    }
+  }
+}

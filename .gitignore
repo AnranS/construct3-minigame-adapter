@@ -1,0 +1,16 @@
+node_modules/
+.DS_Store
+coverage/
+work/
+dist/
+exports/
+*.log
+# Local Construct engine exports stay outside the public source repository.
+examples/construct/html5/
+examples/construct/api-demo-html5/
+examples/construct/*-html5.zip
+examples/construct/archive/*-html5.zip
+project.private.config.json
+.env
+.env.*
+!.env.example

@@ -1,0 +1,481 @@
+{
+  "$schema": "./schemas/aces.schema.json",
+  "bridge": {
+    "conditions": [
+      {
+        "id": "on-ready",
+        "scriptName": "OnReady",
+        "isTrigger": true,
+        "isInvertible": false
+      },
+      {
+        "id": "on-login-succeeded",
+        "scriptName": "OnLoginSucceeded",
+        "isTrigger": true,
+        "isInvertible": false
+      },
+      {
+        "id": "on-ad-completed",
+        "scriptName": "OnAdCompleted",
+        "isTrigger": true,
+        "isInvertible": false
+      },
+      {
+        "id": "on-ad-cancelled",
+        "scriptName": "OnAdCancelled",
+        "isTrigger": true,
+        "isInvertible": false
+      },
+      {
+        "id": "on-score-reported",
+        "scriptName": "OnScoreReported",
+        "isTrigger": true,
+        "isInvertible": false
+      },
+      {
+        "id": "on-vibration-completed",
+        "scriptName": "OnVibrationCompleted",
+        "isTrigger": true,
+        "isInvertible": false
+      },
+      {
+        "id": "on-error",
+        "scriptName": "OnError",
+        "isTrigger": true,
+        "isInvertible": false
+      },
+      {
+        "id": "is-ready",
+        "scriptName": "IsReady"
+      },
+      {
+        "id": "on-api-succeeded",
+        "scriptName": "OnAPISucceeded",
+        "isTrigger": true,
+        "isInvertible": false,
+        "params": [
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "on-api-event",
+        "scriptName": "OnAPIEvent",
+        "isTrigger": true,
+        "isInvertible": false,
+        "params": [
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "supports-api",
+        "scriptName": "SupportsAPI",
+        "params": [
+          {
+            "id": "api-name",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "init",
+        "scriptName": "Init",
+        "isAsync": true
+      },
+      {
+        "id": "login",
+        "scriptName": "Login",
+        "isAsync": true
+      },
+      {
+        "id": "show-rewarded-video",
+        "scriptName": "ShowRewardedVideo",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "ad-unit-id",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "report-score",
+        "scriptName": "ReportScore",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "score",
+            "type": "number",
+            "initialValue": "0"
+          },
+          {
+            "id": "leaderboard-id",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "vibrate",
+        "scriptName": "Vibrate",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "type",
+            "type": "combo",
+            "initialValue": "short",
+            "items": [
+              "short",
+              "long"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "call-api",
+        "scriptName": "CallAPI",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "api-name",
+            "type": "string",
+            "initialValue": "\"\""
+          },
+          {
+            "id": "options-json",
+            "type": "string",
+            "initialValue": "\"{}\""
+          },
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "read-api-sync",
+        "scriptName": "ReadAPISync",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "api-name",
+            "type": "string",
+            "initialValue": "\"\""
+          },
+          {
+            "id": "args-json",
+            "type": "string",
+            "initialValue": "\"[]\""
+          },
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "subscribe-api-event",
+        "scriptName": "SubscribeAPIEvent",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "event-name",
+            "type": "string",
+            "initialValue": "\"\""
+          },
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "unsubscribe-api-event",
+        "scriptName": "UnsubscribeAPIEvent",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "event-name",
+            "type": "string",
+            "initialValue": "\"\""
+          },
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "show-toast",
+        "scriptName": "ShowToast",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "title",
+            "type": "string",
+            "initialValue": "\"\""
+          },
+          {
+            "id": "duration",
+            "type": "number",
+            "initialValue": "1500"
+          },
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "show-modal",
+        "scriptName": "ShowModal",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "title",
+            "type": "string",
+            "initialValue": "\"\""
+          },
+          {
+            "id": "content",
+            "type": "string",
+            "initialValue": "\"\""
+          },
+          {
+            "id": "show-cancel",
+            "type": "combo",
+            "initialValue": "yes",
+            "items": [
+              "no",
+              "yes"
+            ]
+          },
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "set-storage",
+        "scriptName": "SetStorage",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "key",
+            "type": "string",
+            "initialValue": "\"\""
+          },
+          {
+            "id": "value-json",
+            "type": "string",
+            "initialValue": "\"null\""
+          },
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "get-storage",
+        "scriptName": "GetStorage",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "key",
+            "type": "string",
+            "initialValue": "\"\""
+          },
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "remove-storage",
+        "scriptName": "RemoveStorage",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "key",
+            "type": "string",
+            "initialValue": "\"\""
+          },
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "get-network-type",
+        "scriptName": "GetNetworkType",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "set-clipboard",
+        "scriptName": "SetClipboard",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "text",
+            "type": "string",
+            "initialValue": "\"\""
+          },
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "get-clipboard",
+        "scriptName": "GetClipboard",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "show-keyboard",
+        "scriptName": "ShowKeyboard",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "value",
+            "type": "string",
+            "initialValue": "\"\""
+          },
+          {
+            "id": "max-length",
+            "type": "number",
+            "initialValue": "140"
+          },
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      },
+      {
+        "id": "hide-keyboard",
+        "scriptName": "HideKeyboard",
+        "isAsync": true,
+        "params": [
+          {
+            "id": "tag",
+            "type": "string",
+            "initialValue": "\"\""
+          }
+        ]
+      }
+    ],
+    "expressions": [
+      {
+        "id": "platform",
+        "expressionName": "Platform",
+        "returnType": "string"
+      },
+      {
+        "id": "last-error",
+        "expressionName": "LastError",
+        "returnType": "string"
+      },
+      {
+        "id": "last-error-code",
+        "expressionName": "LastErrorCode",
+        "returnType": "string"
+      },
+      {
+        "id": "last-operation",
+        "expressionName": "LastOperation",
+        "returnType": "string"
+      },
+      {
+        "id": "last-login-code",
+        "expressionName": "LastLoginCode",
+        "returnType": "string"
+      },
+      {
+        "id": "last-api-name",
+        "expressionName": "LastAPIName",
+        "returnType": "string"
+      },
+      {
+        "id": "last-api-tag",
+        "expressionName": "LastAPITag",
+        "returnType": "string"
+      },
+      {
+        "id": "last-result-json",
+        "expressionName": "LastResultJSON",
+        "returnType": "string"
+      },
+      {
+        "id": "last-result-is-json",
+        "expressionName": "LastResultIsJSON",
+        "returnType": "number"
+      },
+      {
+        "id": "last-result-type",
+        "expressionName": "LastResultType",
+        "returnType": "string"
+      },
+      {
+        "id": "last-event-json",
+        "expressionName": "LastEventJSON",
+        "returnType": "string"
+      },
+      {
+        "id": "last-event-is-json",
+        "expressionName": "LastEventIsJSON",
+        "returnType": "number"
+      },
+      {
+        "id": "last-event-type",
+        "expressionName": "LastEventType",
+        "returnType": "string"
+      },
+      {
+        "id": "capabilities-json",
+        "expressionName": "CapabilitiesJSON",
+        "returnType": "string"
+      }
+    ]
+  }
+}

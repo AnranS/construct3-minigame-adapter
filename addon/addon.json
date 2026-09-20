@@ -1,0 +1,37 @@
+{
+  "$schema": "./schemas/plugin.addon.schema.json",
+  "is-c3-addon": true,
+  "sdk-version": 2,
+  "min-construct-version": "r450",
+  "type": "plugin",
+  "name": "MiniGameBridge",
+  "id": "C3MiniGameBridge",
+  "version": "0.2.0.0",
+  "supports-worker-mode": false,
+  "author": "MiniGameBridge contributors",
+  "website": "https://www.construct.net/en/make-games/manuals/addon-sdk",
+  "documentation": "https://www.construct.net/en/make-games/manuals/addon-sdk",
+  "description": "WeChat and Douyin API calls, events and native objects through the companion mini game adapter. Requires conversion and host validation.",
+  "editor-scripts": [
+    "plugin.js",
+    "type.js",
+    "instance.js"
+  ],
+  "file-list": [
+    "c3runtime/main.js",
+    "c3runtime/plugin.js",
+    "c3runtime/type.js",
+    "c3runtime/instance.js",
+    "c3runtime/conditions.js",
+    "c3runtime/actions.js",
+    "c3runtime/expressions.js",
+    "lang/en-US.json",
+    "aces.json",
+    "addon.json",
+    "icon.svg",
+    "instance.js",
+    "plugin.js",
+    "type.js",
+    "README.md"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "name": "construct3-minigame-adapter",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Construct 3 addon, runtime adapter and experimental WeChat/Douyin mini-game build tools",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "c3-minigame": "./src/cli.mjs"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "build:addon": "node scripts/package-addon.mjs",
+    "dev:addon": "node scripts/dev-server.mjs",
+    "build:demo": "node scripts/build-demo.mjs",
+    "export:wechat": "node src/cli.mjs convert --input examples/construct/api-demo-html5 --output dist/construct-wechat --platform wechat --experimental --overwrite",
+    "export:douyin": "node src/cli.mjs convert --input examples/construct/api-demo-html5 --output dist/construct-douyin --platform douyin --experimental --overwrite",
+    "build": "npm run build:addon && npm run build:demo",
+    "inspect": "node src/cli.mjs inspect",
+    "convert": "node src/cli.mjs convert",
+    "verify": "npm test && npm run build",
+    "docs:build": "node website/build.mjs",
+    "docs:check": "node website/check.mjs",
+    "docs:dev": "node website/serve.mjs"
+  },
+  "dependencies": {
+    "acorn": "8.18.0",
+    "core-js-pure": "3.49.0",
+    "esbuild": "0.28.2",
+    "fflate": "0.8.3",
+    "parse5": "8.0.1"
+  },
+  "devDependencies": {
+    "ajv": "8.20.0",
+    "marked": "18.0.13"
+  }
+}

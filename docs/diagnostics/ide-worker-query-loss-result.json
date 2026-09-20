@@ -1,0 +1,36 @@
+{
+  "diagnosis": "Local IDE session route drops the libName query before calling the worker compiler",
+  "originalPath": "/game/s1/_sessionId/simulator-app-session-s1/__WORKER__/worker.js?libName=WAAccelerateWorker.js",
+  "parsedSubPath": "__WORKER__/worker.js",
+  "parsedQuery": {
+    "libName": "WAAccelerateWorker.js"
+  },
+  "rewrittenURL": "http://127.0.0.1:1/game/__WORKER__/worker.js",
+  "receivedExtraLibName": null,
+  "actualIdeFunctionsExecuted": [
+    "parsedUrl",
+    "serveGameAppservice",
+    "getParsedUrl",
+    "getGameResource"
+  ],
+  "notExecuted": [
+    "IDE services",
+    "real compiler",
+    "network requests",
+    "native Worker"
+  ],
+  "sources": [
+    {
+      "path": "js/7141d70a632001bdddb65e5d63d2ac25.js",
+      "sha256": "8d0f5358926ef1daf4cdb6ab1c85e466ad124ef4591725958e195906df3508fb"
+    },
+    {
+      "path": "js/8200c33fc6adfcc87f94ac822aa8ec4a.js",
+      "sha256": "a6c5f81ad9a4c368b02a13f598766d065ae58b835937e77f414eb0b95c3ca6ca"
+    },
+    {
+      "path": "js/a9cc11502efe0e26cce81894f7c858be.js",
+      "sha256": "22a34f655cefa6ec75ec28c281194c7e38fe793d54f09a60756199a7d3944212"
+    }
+  ]
+}
