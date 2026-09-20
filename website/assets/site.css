@@ -8,3 +8,7 @@
 .hero-grid>* , .sdk-layout>*{min-width:0}.pipeline{margin:0;min-width:0}.flow-transform small{display:block;font-size:12px;margin-top:5px}
 
 .platforms{flex-wrap:wrap}.platform-symbol.tiktok{background:#f0eef5;color:#252132}.api-table td small{overflow-wrap:anywhere}@media(max-width:420px){.flow-output{grid-template-columns:1fr}.flow-output div{display:flex;align-items:center;justify-content:space-between;gap:12px}}
+
+/* Screenshots remain readable in the article; the image link opens the original. */
+.doc-screenshot{margin:32px 0;min-width:0}.doc-screenshot>a{display:block;border-radius:var(--radius);cursor:zoom-in}.doc-screenshot img{display:block;width:auto;max-width:100%;height:auto;margin-inline:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}.doc-screenshot figcaption{margin-top:10px;color:var(--muted);font-size:13px;line-height:1.7;overflow-wrap:anywhere}.doc-screenshot figcaption p:last-child{margin-bottom:0}
+@media(max-width:800px){.doc-screenshot{margin:24px 0}.doc-screenshot figcaption{font-size:12px}}

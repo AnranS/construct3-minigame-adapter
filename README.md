@@ -1,6 +1,6 @@
 # Construct 3 微信 / 抖音 / TikTok 小游戏适配工具
 
-[使用文档网站](https://anrans.github.io/construct3-minigame-adapter/) · [GitHub 仓库](https://github.com/anrans/construct3-minigame-adapter)
+[使用文档网站](https://anrans.github.io/construct3-minigame-adapter/) · [图文使用指南](https://anrans.github.io/construct3-minigame-adapter/guide/) · [GitHub 仓库](https://github.com/anrans/construct3-minigame-adapter)
 
 将 Construct 3 的 HTML5 导出转换为微信、抖音和 TikTok 原生小游戏工程。项目包含 MiniGameBridge 插件、离线转换 CLI 与运行时适配层，可从事件表或 JavaScript 调用平台能力。
 

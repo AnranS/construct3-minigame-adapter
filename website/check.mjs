@@ -23,7 +23,7 @@ async function walk(directory) {
 const files = new Set(await walk(siteRoot));
 const documents = new Map();
 for (const filename of [...files].filter(name => name.endsWith('.html'))) {
-  const document = {ids: new Set(), anchors: new Set(), links: [], apiRows: 0, platformColumns: new Set(), platformOptions: new Set()};
+  const document = {ids: new Set(), anchors: new Set(), links: [], images: [], apiRows: 0, platformColumns: new Set(), platformOptions: new Set()};
   const tree = parse(await fs.readFile(path.join(siteRoot, filename), 'utf8'));
   function visit(node) {
     const attributes = Object.fromEntries((node.attrs ?? []).map(({name, value}) => [name, value]));
@@ -36,6 +36,18 @@ for (const filename of [...files].filter(name => name.endsWith('.html'))) {
     if (node.tagName === 'tr' && Object.hasOwn(attributes, 'data-api-row')) document.apiRows++;
     if (node.tagName === 'th' && attributes['data-platform-column']) document.platformColumns.add(attributes['data-platform-column']);
     if (node.tagName === 'option' && API_PLATFORMS.includes(attributes.value)) document.platformOptions.add(attributes.value);
+    if (node.tagName === 'img') {
+      const parentAttributes = Object.fromEntries((node.parentNode?.attrs ?? []).map(({name, value}) => [name, value]));
+      const decorative = attributes.alt === '' && (
+        attributes['aria-hidden'] === 'true' || attributes.role === 'presentation' ||
+        (node.parentNode?.tagName === 'a' && parentAttributes['aria-label']?.trim())
+      );
+      const alt = attributes.alt?.trim() ?? '';
+      if (!decorative && (Array.from(alt).length < 4 || /^(?:image|img|photo|screenshot|screen shot|figure|图片|图像|照片|截图)(?:\s*\d+)?$/i.test(alt) || /\.(?:png|jpe?g|gif|webp|avif|svg)$/i.test(alt)))
+        errors.push(`${filename}: image ${JSON.stringify(attributes.src ?? '')} needs descriptive alt text`);
+      if (!attributes.src?.trim()) errors.push(`${filename}: image is missing a non-empty src`);
+      else document.images.push(attributes.src);
+    }
     for (const attribute of ['href', 'src']) {
       if (Object.hasOwn(attributes, attribute)) document.links.push({attribute, value: attributes[attribute]});
     }
@@ -69,6 +81,7 @@ function targetForPath(pathname) {
 }
 
 let checkedLinks = 0;
+let checkedImages = 0;
 for (const [filename, document] of documents) {
   const documentURL = new URL(`${base}${filename.replace(/index\.html$/, '')}`, origin);
   for (const {attribute, value} of document.links) {
@@ -91,6 +104,19 @@ for (const [filename, document] of documents) {
       errors.push(`${filename}: ${attribute}=${JSON.stringify(value)}: ${error.message}`);
     }
   }
+  for (const value of document.images) {
+    try {
+      const url = new URL(value, documentURL);
+      if (url.origin !== origin && !(url.origin === 'https://anrans.github.io' && url.pathname.startsWith(base))) continue;
+      const target = targetForPath(url.pathname);
+      if (!target) throw new Error(`Missing local image: ${url.pathname}`);
+      if (!/\.(?:png|jpe?g|gif|webp|avif|svg|apng|bmp|ico)$/i.test(target)) throw new Error(`Local image does not point to an image file: ${target}`);
+      if ((await fs.stat(path.join(siteRoot, target))).size === 0) throw new Error(`Empty local image: ${target}`);
+      checkedImages++;
+    } catch (error) {
+      errors.push(`${filename}: img src=${JSON.stringify(value)}: ${error.message}`);
+    }
+  }
 }
 
 for (const filename of ['downloads/C3MiniGameBridge.c3addon', 'downloads/MiniGameApiSuite.c3p']) {
@@ -110,5 +136,5 @@ if (errors.length) {
   console.error(`Documentation check failed (${errors.length} issues):\n${errors.map(error => `- ${error}`).join('\n')}`);
   process.exitCode = 1;
 } else {
-  console.log(`Documentation valid: ${documents.size} HTML files, ${checkedLinks} internal references, ${apiRows} API rows, 2 non-empty downloads.`);
+  console.log(`Documentation valid: ${documents.size} HTML files, ${checkedLinks} internal references, ${checkedImages} local image references, ${apiRows} API rows, 2 non-empty downloads.`);
 }

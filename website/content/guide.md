@@ -30,10 +30,20 @@ npm run build:addon
 
 在 Construct 的 **Addon manager** 中安装 `dist/C3MiniGameBridge.c3addon`，按编辑器提示重载。然后在项目中添加 **MiniGameBridge** 对象。
 
+<figure class="doc-screenshot">
+  <a href="../assets/screenshots/construct-addon-manager.jpg"><img style="width:890px" src="../assets/screenshots/construct-addon-manager.jpg" alt="Construct 插件管理器显示 MiniGameBridge 0.3.0.0，以及底部的 Install new addon 按钮" loading="lazy" width="890" height="540"></a>
+  <figcaption>点击 Install new addon… 安装插件包，再搜索 MiniGame 确认版本。截图使用开发插件模式，因此 Source 显示 Developer；从 .c3addon 安装时来源显示可能不同。点击图片查看原图。</figcaption>
+</figure>
+
 | 插件属性 | 如何设置 |
 | --- | --- |
 | Platform | 通常保留 Auto-detect；也可固定为 WeChat、Douyin 或 TikTok，固定值必须与实际宿主一致 |
 | Score endpoint | 只有使用自定义成绩上报时才填写自己的 HTTPS 服务地址，其他情况留空 |
+
+<figure class="doc-screenshot">
+  <a href="../assets/screenshots/construct-plugin-properties.jpg"><img style="width:360px" src="../assets/screenshots/construct-plugin-properties.jpg" alt="MiniGameBridge 属性面板中 Platform 为 Auto-detect，Score endpoint 留空" loading="lazy" width="360" height="290"></a>
+  <figcaption>选中项目中的 MiniGameBridge 对象后设置属性。通常保留 Auto-detect，同一份工程即可转换到不同平台。</figcaption>
+</figure>
 
 在事件表中建立最小初始化流程：
 
@@ -57,7 +67,7 @@ MiniGameBridge → On error
 
 仓库中的 `examples/construct/MiniGameApiSuite.c3p` 是当前功能演示工程，可用 Construct 打开。其界面由真实 Construct Text 对象构成，当前源码在微信 / 抖音下包含 **12 个分类、53 个功能入口**，TikTok 下包含 **13 个分类、57 个入口**，其中支付入口只做能力与流程检查，不会实际付款。0.3.0 已由真实 Construct r495.2 重新导出并完成三端转换，微信 IDE 已显示 53 个入口并验证分类/返回导航，未运行新版自检或点击支付测试入口；历史 0.2.0 的 51 个入口、11 类和 17 项自检记录见[验证记录](../validation/)。
 
-公开仓库提供 `.c3p` 工程和适配器源码，不包含 Construct 引擎的原始 HTML5 导出或 ZIP。请在 Construct 中打开这份工程，选择 **Export → HTML5**；初次验证建议关闭脚本压缩与离线支持。
+公开仓库提供 `.c3p` 工程和适配器源码，不包含 Construct 引擎的原始 HTML5 导出或 ZIP。请在 Construct 中打开这份工程，选择 **Export → HTML5**；初次验证建议关闭脚本压缩与离线支持。下方“导出自己的 Construct 项目”提供相同导出流程的操作截图。
 
 将导出的 ZIP 解压到 `examples/construct/api-demo-html5/`，确保该目录下直接包含 `index.html` 和 `scripts/`，再执行：
 
@@ -83,6 +93,21 @@ macOS 也可双击仓库中的 `构建微信小游戏.command` 或 `构建抖音
 ## 4. 导出自己的 Construct 项目
 
 在 Construct 中保存项目，再选择 **Export → HTML5**。初次接入建议关闭脚本压缩和离线支持，使用尽量小的工程建立运行基线。本轮示例使用未压缩 HTML5 导出。
+
+<figure class="doc-screenshot">
+  <a href="../assets/screenshots/construct-html5-export.jpg"><img style="width:590px" src="../assets/screenshots/construct-html5-export.jpg" alt="Construct 导出平台选择窗口，Web (HTML5) 已选中，右下角为 Next 按钮" loading="lazy" width="590" height="522"></a>
+  <figcaption>① 从 Menu → Project → Export 进入，选择 Web (HTML5)，点击 Next。小游戏转换在后续 CLI 步骤完成。</figcaption>
+</figure>
+
+<figure class="doc-screenshot">
+  <a href="../assets/screenshots/construct-export-options.jpg"><img style="width:430px" src="../assets/screenshots/construct-export-options.jpg" alt="Construct 导出选项中 Minify mode 设置为 None，Offline support 未勾选" loading="lazy" width="430" height="430"></a>
+  <figcaption>② 在 Export options 中向下滚动，将 Minify mode 设为 None，并取消勾选 Offline support。点击 Next 继续导出。</figcaption>
+</figure>
+
+<figure class="doc-screenshot">
+  <a href="../assets/screenshots/construct-export-finished.jpg"><img style="width:570px" src="../assets/screenshots/construct-export-finished.jpg" alt="Construct 显示 Export finished，提供 Download MiniGameApiSuite.zip 下载链接" loading="lazy" width="570" height="568"></a>
+  <figcaption>③ 出现 Export finished 后，点击 Download 下载 HTML5 ZIP。这里完成的是 HTML5 导出，接下来还需解压和转换。</figcaption>
+</figure>
 
 导出 ZIP 后解压到项目下的独立目录，例如：
 
@@ -167,6 +192,11 @@ node src/cli.mjs --help
 ## 接入更多平台能力
 
 适配层有 **{{API_COUNT}} 个唯一 API 名称、{{CATEGORY_COUNT}} 类能力**的显式目录，覆盖异步调用、同步调用、原生对象和事件订阅。先通过 `supportsAPI` 或 `getCapabilities` 检查当前宿主，再按目录种类调用。详见[API 目录](../api/)和[插件接入](../addon/)。
+
+<figure class="doc-screenshot">
+  <a href="../assets/screenshots/api-platform-filter.jpg"><img style="width:850px" src="../assets/screenshots/api-platform-filter.jpg" alt="API 目录选择 TikTok 平台和支付分类，显示 checkBalance、pay、navigateToBalance 三个接口及平台差异" loading="lazy" width="850" height="762"></a>
+  <figcaption>在 API 目录中按平台和能力筛选，再查看调用种类、参数与平台差异。图中为 TikTok 的支付分类；目录收录不等于已经完成真机或支付验收。</figcaption>
+</figure>
 
 账号登录需要自己的服务端交换临时代码；网络请求需要自己的服务和平台域名配置；广告需要实际广告位及开通条件。示例中未配置广告位、HTTPS 地址或 WebSocket 地址时，会提示缺少配置并跳过相应调用。
 
