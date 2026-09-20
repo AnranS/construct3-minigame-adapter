@@ -54,9 +54,15 @@ for (const [source,name] of [['dist/C3MiniGameBridge.c3addon','C3MiniGameBridge.
 await fs.writeFile(path.join(out,'index.html'),shell({title:'Construct 游戏的小游戏适配工具',description:'Construct 3 微信 / 抖音小游戏插件、HTML5 导出转换与原生 API 文档。',body:homeBody}));
 for (const [slug,title,description] of pages) {
   const {html,headings} = markdown(await fs.readFile(path.join(root,`website/content/${slug}.md`),'utf8'));
-  if (slug==='api') headings.push({id:'api-directory',text:'完整 API 目录'});
+  let articleHTML = html;
+  if (slug === 'api') {
+    const split = html.indexOf('<h2');
+    const jump = `<p><a class="button" href="#${escape(headings[0].id)}">阅读调用约定与代码示例 ↓</a></p>`;
+    articleHTML = html.slice(0, split) + jump + apiTable() + html.slice(split);
+    headings.unshift({id:'api-directory',text:'完整 API 目录'});
+  }
   const navLinks = pages.map(([key,label])=>`<a href="${link(key)}"${current(key,slug)}>${label}</a>`).join('');
-  const body = `<main id="main" class="doc-layout"><aside class="doc-sidebar" aria-label="文档导航"><p class="sidebar-label">使用文档 · v${version}</p><nav>${navLinks}</nav><div class="sidebar-separator"><a href="${base}downloads/C3MiniGameBridge.c3addon" download>下载插件 ↓</a><a href="${base}downloads/MiniGameApiSuite.c3p" download>下载示例工程 ↓</a><a href="${repo}">GitHub ↗</a></div></aside><article class="doc-content"><details class="doc-mobile-nav"><summary>文档目录 · ${title}</summary><nav aria-label="移动端文档导航">${navLinks}</nav></details><p class="eyebrow">CONSTRUCT MINI GAME / ${slug.toUpperCase()}</p>${html}${slug==='api'?apiTable():''}<div class="doc-bottom"><a href="${repo}/blob/main/website/content/${slug}.md">在 GitHub 查看本文 ↗</a><span>v${version} · 2026-09-20</span></div></article><aside class="doc-toc" aria-label="页内目录"><strong>本页内容</strong>${headings.map(h=>`<a href="#${escape(h.id)}">${escape(h.text)}</a>`).join('')}</aside></main>`;
+  const body = `<main id="main" class="doc-layout"><aside class="doc-sidebar" aria-label="文档导航"><p class="sidebar-label">使用文档 · v${version}</p><nav>${navLinks}</nav><div class="sidebar-separator"><a href="${base}downloads/C3MiniGameBridge.c3addon" download>下载插件 ↓</a><a href="${base}downloads/MiniGameApiSuite.c3p" download>下载示例工程 ↓</a><a href="${repo}">GitHub ↗</a></div></aside><article class="doc-content"><details class="doc-mobile-nav"><summary>文档目录 · ${title}</summary><nav aria-label="移动端文档导航">${navLinks}</nav></details><p class="eyebrow">CONSTRUCT MINI GAME / ${slug.toUpperCase()}</p>${articleHTML}<div class="doc-bottom"><a href="${repo}/blob/main/website/content/${slug}.md">在 GitHub 查看本文 ↗</a><span>v${version} · 2026-09-20</span></div></article><aside class="doc-toc" aria-label="页内目录"><strong>本页内容</strong>${headings.map(h=>`<a href="#${escape(h.id)}">${escape(h.text)}</a>`).join('')}</aside></main>`;
   await fs.mkdir(path.join(out,slug),{recursive:true});
   await fs.writeFile(path.join(out,slug,'index.html'),shell({slug,title,description,body}));
 }
