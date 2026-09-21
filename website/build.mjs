@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {marked} from 'marked';
 import {getAPICatalog, getAPISummary, API_PLATFORMS, getAPIPlatformLabels} from './api-catalog.mjs';
@@ -13,6 +14,11 @@ const repo = 'https://github.com/AnranS/construct3-minigame-adapter';
 const version = JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8')).version;
 const summary = getAPISummary();
 const themeScript = (await fs.readFile(path.join(root, 'website/assets/theme.js'), 'utf8')).replaceAll('</script', '<\\/script');
+const assetVersions = Object.fromEntries(await Promise.all(['site.css', 'site.js', 'favicon.svg'].map(async name => {
+  const contents = await fs.readFile(path.join(root, 'website/assets', name));
+  return [name, createHash('sha256').update(contents).digest('hex').slice(0, 12)];
+})));
+const assetLink = name => `${base}assets/${name}?v=${assetVersions[name]}`;
 const tokens = {VERSION: version, API_COUNT: summary.names, CATEGORY_COUNT: summary.categories, WECHAT_COUNT: summary.platforms.wechat, DOUYIN_COUNT: summary.platforms.douyin, TIKTOK_COUNT: summary.platforms.tiktok, PLATFORM_COUNT: API_PLATFORMS.length};
 const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const languageBase = locale => `${base}${locale === 'en' ? 'en/' : ''}`;
@@ -27,7 +33,7 @@ const current = (slug, active) => slug === active ? ' aria-current="page"' : '';
 function header(active, locale, anchorMap) {
   const t = messages[locale], other = otherLocale(locale);
   const navigation = ['', 'guide', 'api', 'validation'].map((slug, i) => `<a href="${link(slug, locale)}"${current(slug, active)}>${t.nav[i]}</a>`).join('');
-  return `<a class="skip-link" href="#main">${t.skip}</a><header class="site-header"><div class="container nav-shell"><a class="brand" href="${link('', locale)}" aria-label="${t.homeLabel}"><img src="${base}assets/favicon.svg" alt="" width="34" height="34"><span>Construct <small>Mini Game</small></span></a><nav class="nav-links" id="primary-nav" aria-label="${t.navLabel}">${navigation}<a class="github" href="${repo}">GitHub ↗</a></nav><div class="nav-actions"><label class="theme-control" data-theme-control hidden><span class="sr-only">${t.themeLabel}</span><select data-theme-picker class="theme-select" aria-label="${t.themeLabel}" title="${t.themeLabel}"><option value="system">${t.themeSystem}</option><option value="light">${t.themeLight}</option><option value="dark">${t.themeDark}</option></select></label><a class="language-switch" data-language-switch data-language-anchors="${escape(JSON.stringify(anchorMap))}" href="${link(active, other)}" hreflang="${other}" lang="${other}" aria-label="${t.switchLabel}">${t.switchText}</a><button type="button" class="menu-toggle" aria-expanded="false" aria-controls="primary-nav">${t.menu}</button></div></div></header>`;
+  return `<a class="skip-link" href="#main">${t.skip}</a><header class="site-header"><div class="container nav-shell"><a class="brand" href="${link('', locale)}" aria-label="${t.homeLabel}"><img src="${assetLink('favicon.svg')}" alt="" width="34" height="34"><span>Construct <small>Mini Game</small></span></a><nav class="nav-links" id="primary-nav" aria-label="${t.navLabel}">${navigation}<a class="github" href="${repo}">GitHub ↗</a></nav><div class="nav-actions"><label class="theme-control" data-theme-control hidden><span class="sr-only">${t.themeLabel}</span><select data-theme-picker class="theme-select" aria-label="${t.themeLabel}" title="${t.themeLabel}"><option value="system">${t.themeSystem}</option><option value="light">${t.themeLight}</option><option value="dark">${t.themeDark}</option></select></label><a class="language-switch" data-language-switch data-language-anchors="${escape(JSON.stringify(anchorMap))}" href="${link(active, other)}" hreflang="${other}" lang="${other}" aria-label="${t.switchLabel}">${t.switchText}</a><button type="button" class="menu-toggle" aria-expanded="false" aria-controls="primary-nav">${t.menu}</button></div></div></header>`;
 }
 function footer(locale) {
   const t = messages[locale];
@@ -36,7 +42,7 @@ function footer(locale) {
 function shell({slug = '', locale, title, description, body, anchorMap = {}}) {
   const url = `${origin}${link(slug, locale)}`;
   const alternatives = [...LOCALES.map(lang => `<link rel="alternate" hreflang="${lang}" href="${origin}${link(slug, lang)}">`), `<link rel="alternate" hreflang="x-default" href="${origin}${link(slug, 'zh-CN')}">`].join('');
-  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#fdfefd"><script>${themeScript}</script><title>${escape(title)} · Construct Mini Game</title><meta name="description" content="${escape(description)}"><link rel="canonical" href="${url}">${alternatives}<meta property="og:title" content="${escape(title)} · Construct Mini Game"><meta property="og:description" content="${escape(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${url}"><meta property="og:locale" content="${locale === 'en' ? 'en_US' : 'zh_CN'}"><link rel="icon" type="image/svg+xml" href="${base}assets/favicon.svg"><link rel="stylesheet" href="${base}assets/site.css"><script type="module" src="${base}assets/site.js"></script></head><body>${header(slug, locale, anchorMap)}${body}${footer(locale)}</body></html>`;
+  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#fafafa"><script>${themeScript}</script><title>${escape(title)} · Construct Mini Game</title><meta name="description" content="${escape(description)}"><link rel="canonical" href="${url}">${alternatives}<meta property="og:title" content="${escape(title)} · Construct Mini Game"><meta property="og:description" content="${escape(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${url}"><meta property="og:locale" content="${locale === 'en' ? 'en_US' : 'zh_CN'}"><link rel="icon" type="image/svg+xml" href="${assetLink('favicon.svg')}"><link rel="stylesheet" href="${assetLink('site.css')}"><script type="module" src="${assetLink('site.js')}"></script></head><body>${header(slug, locale, anchorMap)}${body}${footer(locale)}</body></html>`;
 }
 function markdown(source) {
   const headings = [], allHeadings = [], used = new Map();

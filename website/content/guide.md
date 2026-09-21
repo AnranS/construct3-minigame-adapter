@@ -195,7 +195,7 @@ node src/cli.mjs --help
 
 <figure class="doc-screenshot">
   <a href="../assets/screenshots/api-platform-filter.jpg"><img style="width:850px" src="../assets/screenshots/api-platform-filter.jpg" alt="API 目录选择 TikTok 平台和支付分类，显示 checkBalance、pay、navigateToBalance 三个接口及平台差异" loading="lazy" width="850" height="762"></a>
-  <figcaption>在 API 目录中按平台和能力筛选，再查看调用种类、参数与平台差异。图中为 TikTok 的支付分类；目录收录不等于已经完成真机或支付验收。</figcaption>
+  <figcaption>在 API 目录中按平台和能力筛选，再查看调用种类、参数与平台差异。图中为早期配色界面的 TikTok 支付分类，筛选方式保持一致；目录收录不等于已经完成真机或支付验收。</figcaption>
 </figure>
 
 账号登录需要自己的服务端交换临时代码；网络请求需要自己的服务和平台域名配置；广告需要实际广告位及开通条件。示例中未配置广告位、HTTPS 地址或 WebSocket 地址时，会提示缺少配置并跳过相应调用。

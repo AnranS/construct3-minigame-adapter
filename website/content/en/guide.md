@@ -195,7 +195,7 @@ The adapter has an explicit catalog of **{{API_COUNT}} unique API names across {
 
 <figure class="doc-screenshot">
   <a href="{{ASSET_BASE}}assets/screenshots/api-platform-filter.jpg"><img style="width:850px" src="{{ASSET_BASE}}assets/screenshots/api-platform-filter.jpg" alt="API catalog filtered to TikTok and Payments, showing checkBalance, pay, navigateToBalance, and platform differences" loading="lazy" width="850" height="762"></a>
-  <figcaption>Filter the catalog by platform and capability, then check the invocation kind, parameters, and platform differences. This screenshot shows TikTok's payment category; inclusion in the catalog does not mean device or payment acceptance testing is complete.</figcaption>
+  <figcaption>Filter the catalog by platform and capability, then check the invocation kind, parameters, and platform differences. This screenshot uses an earlier color theme and shows TikTok's payment category; the filtering workflow is unchanged. Inclusion in the catalog does not mean device or payment acceptance testing is complete.</figcaption>
 </figure>
 
 Account login requires your backend to exchange temporary codes. Network requests need your own service and the platform's domain configuration. Ads require real ad unit IDs and access approval. If the sample has no ad unit, HTTPS URL, or WebSocket URL configured, it reports the missing configuration and skips the corresponding call.

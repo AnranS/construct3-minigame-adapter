@@ -16,7 +16,7 @@
     const theme = preference === 'system' ? (media?.matches ? 'dark' : 'light') : preference;
     root.dataset.theme = theme;
     root.dataset.themePreference = preference;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#111815' : '#fdfefd');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#101014' : '#fafafa');
     if (picker) picker.value = preference;
   };
   apply();
