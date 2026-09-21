@@ -132,7 +132,7 @@ node src/cli.mjs inspect --input ./exports/my-game
 
 ## TikTok 灰屏，最后只有 secure context 警告
 
-2026-09-21 的 TikTok iOS 用户反馈：`fix1` 不再出现 `offWindowResize` 异常，但游戏仍灰屏，最后一条游戏相关日志是 Construct 的 `not a secure context` 警告，Error 页为空。当前尚未确认灰屏根因，也没有修复后的真机首帧通过记录。
+2026-09-21 的 TikTok iOS 用户反馈：`fix1` 不再出现 `offWindowResize` 异常，但游戏仍灰屏，最后一条游戏相关日志是 Construct 的 `not a secure context` 警告，Error 页为空。当时尚未确认失败位置；后续 `fix2` 的真机日志定位到 `queueMicrotask` 接收对象错误，处理方式见下一节。修复后的真机首帧仍无通过记录。
 
 这条警告本身不会中止 Construct 启动。已确认的诊断缺口是：Construct 构造器发起异步初始化后立即返回，初始化 Promise 的后续错误可能绕过 `__C3MiniGameLoaded` 的入口加载错误捕获。因此 Error 页为空，仍可能有尚未暴露的初始化失败或等待。
 
@@ -147,6 +147,16 @@ node src/cli.mjs inspect --input ./exports/my-game
 新诊断记录 worker 创建、任务调度器、runtime 创建与初始化、项目数据、Canvas、WebGL 及包内资源读取阶段。它保留安全上下文警告，不通过屏蔽警告或伪造 ready 让测试看起来成功。可选资源读取失败不会单独将启动判为失败，远程业务 URL 不进入诊断日志。
 
 如果灰屏时两种诊断日志都没有出现，保留启动日志并确认当前运行的是新包。反馈时附上 TikTok 客户端版本和设备信息；目前这一步用于取得具体失败阶段，不能当作灰屏已经修复。完整记录见[验证记录](../validation/)。
+
+## TikTok 报 Can only call Window.queueMicrotask on instances of Window
+
+`fix2` 的 TikTok iOS 真机诊断已捕获 `STARTUP_FAILED`，阶段为 `runtime-interface-init`，错误为 `Can only call Window.queueMicrotask on instances of Window`。本地已复现：旧实现将底层全局函数绑定到 `GameGlobal`，但该函数要求真实 Window 作为 `this`，消息通道初始化因此失败。随后再次绑定到引擎兼容对象也无法纠正第一次绑定。
+
+请使用 `fix3`，或更新源码后重新转换原始 HTML5 导出，并确认启动日志包含 `build=host-receiver-3`。修复分别捕获真实全局环境和 `GameGlobal`；两者共享的函数使用原始全局接收对象，小游戏独有方法保留自己的接收对象。相同处理覆盖定时器、rAF、`queueMicrotask`、`atob` / `btoa` 和 `structuredClone`，裸定时器也统一通过引擎作用域。
+
+这里的 `Window` 是底层函数的类型检查，不代表能直接使用完整网页 DOM。Construct 看到的 `window` / `self` 仍是适配层提供的兼容对象；修复没有把真实浏览器 DOM 引入小游戏。TikTok 官方对完整 DOM、CSS 和任意浏览器 API 的限制见 [Technical Overview](https://developers.tiktok.com/docs/en/mini-games-technical-overview)。
+
+此次修复针对已确认的函数绑定异常，**fix3 仍需在手机上验证实际 ready 和首帧**。若依旧灰屏，等待至少 15 秒并提供新的 `STARTUP_FAILED` 或 `STARTUP_WAIT` 完整日志，不能只根据构建完成或旧异常消失判定整个适配已通过。
 
 ## TikTok 检测不到宿主或支付没有发货
 

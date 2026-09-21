@@ -3,11 +3,12 @@
  * Keep this function dependency-free: the build wrapper may embed its function source before
  * bundled libraries execute so their global detection sees standard JavaScript intrinsics.
  */
-export function createEngineScope(nativeHost, {platform = 'douyin', api, nativeBindings = {}} = {}) {
+export function createEngineScope(nativeHost, {platform = 'douyin', api, nativeBindings = {}, nativeGlobal = nativeHost} = {}) {
   if (!nativeHost || (typeof nativeHost !== 'object' && typeof nativeHost !== 'function')) throw new TypeError('A native host object is required');
+  if (!nativeGlobal || (typeof nativeGlobal !== 'object' && typeof nativeGlobal !== 'function')) throw new TypeError('A native global object is required');
   if (!['douyin', 'wechat', 'tiktok'].includes(platform)) throw new Error(`Unsupported platform: ${platform}`);
   const ownsBinding = name => Object.prototype.hasOwnProperty.call(nativeBindings, name);
-  const readNative = name => ownsBinding(name) ? nativeBindings[name] : nativeHost[name];
+  const readNative = name => ownsBinding(name) ? nativeBindings[name] : name in nativeHost ? nativeHost[name] : nativeGlobal[name];
   const apiName = platform === 'tiktok' ? 'TTMinis.game' : platform === 'douyin' ? 'tt' : 'wx';
   const platformAPI = api || (platform === 'tiktok' ? readNative('TTMinis')?.game : readNative(apiName));
   if (!platformAPI || typeof platformAPI.createCanvas !== 'function') throw new Error(`Missing ${apiName} mini-game API`);
@@ -29,11 +30,18 @@ export function createEngineScope(nativeHost, {platform = 'douyin', api, nativeB
     'WebGLRenderingContext', 'WebGL2RenderingContext'
   ];
   for (const name of intrinsicNames) {
-    if (ownsBinding(name) || name in nativeHost) scope[name] = readNative(name);
+    if (ownsBinding(name) || name in nativeHost || name in nativeGlobal) scope[name] = readNative(name);
   }
   for (const name of ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'queueMicrotask',
     'requestAnimationFrame', 'cancelAnimationFrame', 'atob', 'btoa', 'structuredClone']) {
-    if (typeof readNative(name) === 'function') scope[name] = readNative(name).bind(nativeHost);
+    const method = readNative(name);
+    if (typeof method !== 'function') continue;
+    // GameGlobal may expose unbound copies of the surrounding realm's methods.
+    // Web IDL methods (notably iOS queueMicrotask) check the real receiver. A
+    // second bind in the engine cannot repair an incorrect first BoundThis.
+    // Distinct game-specific implementations still belong to GameGlobal.
+    const owner = ownsBinding(name) || method === nativeGlobal[name] ? nativeGlobal : nativeHost;
+    scope[name] = method.bind(owner);
   }
   for (const name of ['console', 'performance', 'crypto']) {
     if (readNative(name) !== undefined) scope[name] = readNative(name);

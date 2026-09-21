@@ -65,3 +65,36 @@ test('scope accepts explicit lexical platform bindings without importing native 
   assert.equal(scope.wx, api); assert.equal(scope.WXWebAssembly, wasm); assert.equal(scope.WebAssembly, undefined);
   assert.equal(scope.document, undefined);
 });
+
+test('copied realm methods keep the real receiver even after an engine rebind', () => {
+  const realm = {};
+  const calls = [];
+  const methods = ['queueMicrotask', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
+    'requestAnimationFrame', 'cancelAnimationFrame', 'atob', 'btoa', 'structuredClone'];
+  for (const name of methods) realm[name] = function (...args) {
+    assert.equal(this, realm, `${name} requires its real realm receiver`);
+    calls.push([name, ...args]); return args[0];
+  };
+  const gameGlobal = {wx: platformAPI(), ...realm};
+  const scope = createEngineScope(gameGlobal, {platform: 'wechat', nativeGlobal: realm});
+  for (const name of methods) {
+    assert.equal(scope[name].bind(scope)('value'), 'value');
+    assert.equal(gameGlobal[name], realm[name], 'the original function is not replaced');
+  }
+  assert.equal(calls.length, methods.length);
+  assert.equal(realm.window, undefined, 'no browser window property is required');
+  assert.equal(scope.window, scope);
+});
+
+test('distinct game methods retain the game host while missing primitives fall back to the realm', () => {
+  const realm = {Math, console, document: {}, fetch() { assert.fail('native DOM networking is isolated'); }};
+  realm.queueMicrotask = function (callback) { assert.equal(this, realm); callback(); };
+  realm.setTimeout = () => assert.fail('must keep the distinct game timer');
+  const gameGlobal = {wx: platformAPI(), setTimeout(callback, delay) { assert.equal(this, gameGlobal); assert.equal(delay, 5); callback(); return 42; }};
+  const scope = createEngineScope(gameGlobal, {platform: 'wechat', nativeGlobal: realm});
+  let calls = 0;
+  scope.queueMicrotask(() => calls++);
+  assert.equal(scope.setTimeout(() => calls++, 5), 42);
+  assert.equal(calls, 2); assert.equal(scope.Math, Math); assert.equal(scope.console, console);
+  assert.equal(scope.document, undefined); assert.equal(scope.fetch, undefined);
+});

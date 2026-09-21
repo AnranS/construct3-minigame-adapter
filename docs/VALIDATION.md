@@ -32,19 +32,31 @@
 
 修复后本机 `npm test` 为 **262 项通过、0 失败、0 跳过**。共享分发器使用独立工厂隔离订阅者闭包，附加 GC 回归确认释放后的页面对象可被回收。新增回归覆盖仅有 on 的窗口变化、触摸、滚轮、前后台及网络事件，释放后无副作用，多适配层互不干扰，重复安装不增加原生监听，注册失败回滚，以及缺失 off 接口时转换产物的启动协议。完整打包启动检查使用原创 Construct 协议夹具；新产物仍需重新执行 TikTok 真机启动与渲染验收。
 
-## 2026-09-21 TikTok iOS 灰屏反馈与启动诊断
+## 2026-09-21 TikTok iOS 灰屏反馈与 fix2 启动诊断
 
 用户使用 `fix1` 产物复测后，未再报告 `offWindowResize` 异常，但游戏仍停在灰屏。提供的真机截图最后一条游戏相关日志是 Construct 的 `not a secure context` 警告，用户另确认控制台 Error 页为空。这是一次新的失败报告；不能据此认定安全上下文警告就是灰屏原因，也不能把 Error 页为空当作启动成功。
 
-本地源码分析确认：Construct 的 `RuntimeInterface` 构造器会发起异步初始化而不等待其返回 Promise；因此入口脚本的 `__C3MiniGameLoaded` 可以先完成，这条初始化链的后续 rejection 不一定进入原有入口加载错误捕获。这个错误观测缺口已经确认，TikTok 真机灰屏的具体失败阶段和根因仍未确认。
+本地源码分析确认：Construct 的 `RuntimeInterface` 构造器会发起异步初始化而不等待其返回 Promise；因此入口脚本的 `__C3MiniGameLoaded` 可以先完成，这条初始化链的后续 rejection 不一定进入原有入口加载错误捕获。这个错误观测缺口已经确认；交付 `fix2` 时，TikTok 真机灰屏的具体失败阶段和根因尚未确认，后续复测结果见下一节。
 
 新产物观察实际初始化过程中的 worker 创建、任务调度器、runtime 创建与初始化、项目数据、Canvas 和 WebGL 阶段，并记录包内资源读取。失败输出 `STARTUP_FAILED`；启动等待超过 15 秒且仍未就绪时输出一次 `STARTUP_WAIT`，包含当前等待阶段及已执行阶段。诊断保留原 Promise、返回值和异常语义；等待提示不终止慢启动，也不生成虚假的 ready。可选资源读取失败只记录阶段，不单独把引擎判为失败；远程业务 URL 不加入诊断日志。
 
 本轮本机 `npm test` 为 **285 项通过、0 失败、0 跳过**，包括打包产物中私有异步初始化失败的回归、可恢复的渲染器重试和就绪消息处理失败。真实 HTML5 输入重新转换后，`scripts/main.js` 中识别并观察了 3 处异步调用；原始导出未改写。该结果验证捕获与诊断路径，不代表已复现或修复用户手机上的具体故障。
 
-**这次改动补足诊断，尚未证明灰屏已修复或真机首帧已显示。** 安全上下文警告保持原样，只有 Construct 实际发出并成功处理 `runtime-ready` 才记录就绪，之后仍需观察画面和输入。
+**fix2 补足诊断，当时尚未证明灰屏已修复或真机首帧已显示。** 安全上下文警告保持原样，只有 Construct 实际发出并成功处理 `runtime-ready` 才记录就绪，之后仍需观察画面和输入。
 
 复测时换用含启动诊断的新包并完整重新启动，等待至少 15 秒。若仍灰屏，提供 `STARTUP_FAILED` 或 `STARTUP_WAIT` 的完整日志，以及其前后的阶段记录、TikTok 客户端版本和设备信息；如果两种日志都没有出现，也需保留启动日志以确认新包是否执行。不要继续用 `fix1` 判断本轮诊断是否有效。
+
+## 2026-09-21 fix3：原生全局方法接收对象修复
+
+用户使用 `fix2` 在 TikTok iOS 真机再次运行，新增诊断捕获到 `STARTUP_FAILED`，阶段为 `runtime-interface-init`，错误为 `TypeError: Can only call Window.queueMicrotask on instances of Window`。堆栈从原生 `queueMicrotask` 指向 `MessagePort.start` 和 `onmessage` 赋值。本地严格模拟宿主已复现同文异常，确认了此次初始化失败的直接原因。
+
+旧实现将从 `GameGlobal` 读取的 `queueMicrotask` 首次绑定到 `GameGlobal`；该宿主实际提供的是要求真实 Window 接收对象的函数。引擎兼容作用域中的再次 `bind` 无法覆盖第一次绑定，导致消息通道启动时触发底层类型检查。报错中的 `Window` 指底层函数要求的接收对象类型，不表示小游戏提供了完整浏览器。
+
+`fix3` 在构建入口分别捕获真实全局对象与 `GameGlobal`。当两者引用同一个全局函数时，按原始全局环境绑定；小游戏宿主独有的方法仍绑定到 `GameGlobal`。白名单覆盖定时器及取消方法、rAF 及取消方法、`queueMicrotask`、`atob`、`btoa` 和 `structuredClone`，裸定时器调用也统一经过引擎作用域。引擎中的 `window` / `self` 仍是适配层兼容对象，此修复不引入宿主真实 DOM、浏览器事件或网络实现。TikTok 官方也说明原生小游戏环境不具备完整浏览器能力，不能依赖完整 DOM、CSS 或任意浏览器 API，见 [Technical Overview](https://developers.tiktok.com/docs/en/mini-games-technical-overview)。
+
+新包启动标记为 `build=host-receiver-3`，保留 `STARTUP_FAILED`、`STARTUP_WAIT` 与真实 `runtime-ready` 诊断。**当前已修复并本地复现验证的是错误接收对象绑定；fix3 的手机首帧仍待复测，不能据此宣称所有 TikTok 兼容问题已解决。** 复测时确认新标记、实际 ready 和画面；若出现新失败，继续提供完整阶段日志。
+
+本轮本机自动化回归 **289 项通过、0 失败、0 跳过**。新增独立 `GameGlobal` 与严格全局函数接收对象检查：旧版 helper 复现同文异常，修复后的完整转换产物完成 MessageChannel / Worker 消息往返及定时器、帧回调；原生 DOM 和方法引用保持不变。另覆盖宿主独有方法和缺失方法的回退路径。真实 Construct HTML5 输入已重新转换并通过入口语法检查；这些是本地验证，手机结果单独记录。
 
 ## 0.2.0 历史结论
 
