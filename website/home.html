@@ -1,11 +1,65 @@
 <main id="main">
-<section class="hero"><div class="container"><div class="hero-grid">
-<div><span class="status">v{{VERSION}} · 实验性适配工具</span><p class="eyebrow">CONSTRUCT 3 → MINI GAME</p><h1>把 Construct 游戏，<span>带到三个小游戏平台。</span></h1><p class="hero-desc">从 HTML5 导出到小游戏工程。用 MiniGameBridge 插件连接原生能力，以微信、抖音和 TikTok 的独立宿主契约生成小游戏工程。</p><div class="actions"><a class="button primary" href="{{BASE}}guide/">开始接入 <span>→</span></a><a class="button" href="{{BASE}}downloads/C3MiniGameBridge.c3addon" download>下载插件 <span>↓</span></a></div><div class="platforms"><span>目标平台</span><b><i class="platform-symbol" aria-hidden="true">微</i>WeChat</b><b><i class="platform-symbol tt" aria-hidden="true">抖</i>Douyin</b><b><i class="platform-symbol tiktok" aria-hidden="true">T</i>TikTok</b></div></div>
-<figure class="pipeline" aria-label="Construct 项目通过 HTML5 导出和 CLI 转换，生成微信、抖音与 TikTok 原生工程"><div class="pipeline-bar"><span class="pipeline-title">从编辑器到小游戏</span><span>EXPORT WORKFLOW</span></div><div class="pipeline-body"><div class="flow-source"><span class="source-mark">C3</span><div><b>你的 Construct 3 项目</b><small>事件表 / JavaScript + MiniGameBridge</small></div></div><div class="flow-connector" aria-hidden="true">↓</div><div class="flow-transform"><b>导出 HTML5，再运行转换器</b><code>c3-minigame convert --platform wechat</code><small>本地模块打包 · 运行时适配 · 平台配置</small></div><div class="flow-connector" aria-hidden="true">↓</div><div class="flow-output"><div><b>微信小游戏</b><small>game.js + game.json<br>微信开发者工具</small></div><div><b>抖音小游戏</b><small>game.js + game.json<br>抖音开发者工具</small></div><div><b>TikTok Mini Games</b><small>Native runtime<br>TTMinis.game</small></div></div></div><figcaption class="pipeline-note">插件负责 API 接入，CLI 负责转换；保留 Construct 原始导出。</figcaption></figure>
-</div><div class="metrics"><div><strong>{{PLATFORM_COUNT}}</strong><span>目标小游戏平台</span></div><div><strong>{{API_COUNT}}</strong><span>显式 API 名称 · {{CATEGORY_COUNT}} 类能力</span></div><div><strong>53 / 57</strong><span>微信抖音 / TikTok 示例入口 · 源码</span></div><div><strong>255</strong><span>0.3.0 本地回归通过 · 非真机验收</span></div></div></div></section>
-<section class="section"><div class="container"><div class="section-head"><p class="eyebrow">一套完整的接入链路</p><h2>让游戏逻辑，接上平台能力。</h2><p>从 Construct 中的事件，到宿主真实回调，每一层都有明确的职责。</p></div><div class="feature-grid"><article class="feature"><span class="index">01 / ADDON</span><h3>事件表与 JavaScript</h3><p>19 个动作、11 个条件、14 个表达式。通过同一插件接入登录、存储、弹窗、键盘与更多原生 API。</p><a href="{{BASE}}addon/">查看插件用法 →</a></article><article class="feature"><span class="index">02 / CONVERTER</span><h3>HTML5 转小游戏工程</h3><p>检查真实导出，打包本地脚本和资源，生成平台入口与构建报告。同一条转换流程，分别生成微信、抖音和 TikTok 配置。</p><a href="{{BASE}}guide/">走完首次导出 →</a></article><article class="feature"><span class="index">03 / RUNTIME</span><h3>宿主 API 与运行时适配</h3><p>桥接 Canvas、触摸、存储、网络与音频；支持异步、同步、对象和事件四类接口，保留真实失败结果。</p><a href="{{BASE}}api/">浏览 API 目录 →</a></article></div></div></section>
-<section class="section muted" id="workflow"><div class="container"><div class="section-head"><p class="eyebrow">QUICK START</p><h2>四步跑通第一个小游戏。</h2><p>准备 Node.js 22+、Construct 3，以及对应平台的开发者工具。</p></div><div class="steps"><article><span class="step-number">01 — INSTALL</span><h3>安装桥接插件</h3><p>安装 .c3addon，在项目中添加 MiniGameBridge 对象，初始化后调用平台能力。</p><a href="{{BASE}}downloads/C3MiniGameBridge.c3addon" download>下载 .c3addon ↓</a></article><article><span class="step-number">02 — EXPORT</span><h3>从 Construct 导出</h3><p>用示例工程开始，选择 HTML5 导出，解压 ZIP 并保留完整目录结构。</p><a href="{{BASE}}downloads/MiniGameApiSuite.c3p" download>下载示例 .c3p ↓</a></article><article><span class="step-number">03 — CONVERT</span><h3>选择目标平台</h3><p>运行 inspect 检查，再运行 convert；指定平台、AppID 与输出路径。</p><a href="{{BASE}}guide/">查看完整命令 →</a></article><article><span class="step-number">04 — VERIFY</span><h3>导入小游戏 IDE</h3><p>导入生成的输出目录，检查 runtime-ready、画面和交互，再开展真机验证。</p><a href="{{BASE}}validation/">查看已验证范围 →</a></article></div></div></section>
-<section class="section"><div class="container sdk-layout"><div><p class="eyebrow">MINIGAMEBRIDGE</p><h2>原生能力，<br>直接在游戏里调用。</h2><p class="hero-desc">先检测能力，再发起调用。平台未提供的方法会明确报错，原生事件和异步结果都可在 Construct 中处理。</p><div class="tag-list"><span>系统信息</span><span>交互反馈</span><span>存储与文件</span><span>音频</span><span>网络</span><span>生命周期</span><span>广告与分享</span><span>TikTok IAP</span></div><a href="{{BASE}}api/">搜索 {{API_COUNT}} 个 API 名称 →</a></div><pre><code>// Construct 项目脚本
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">CONSTRUCT 3 → MINI GAME</p>
+        <h1>把 Construct 游戏，<span>带到小游戏平台。</span></h1>
+        <p class="hero-desc">从 HTML5 导出到原生小游戏工程。用 MiniGameBridge 连接微信、抖音和 TikTok 的平台能力。</p>
+        <div class="actions">
+          <a class="button primary" href="{{BASE}}guide/">开始接入 <span aria-hidden="true">→</span></a>
+          <a class="button" href="{{BASE}}downloads/C3MiniGameBridge.c3addon" download>下载插件 <span aria-hidden="true">↓</span></a>
+        </div>
+      </div>
+      <figure class="hero-visual">
+        <a href="{{BASE}}assets/render-test.png" aria-label="查看图片渲染示例素材原图"><img src="{{BASE}}assets/render-test.png" width="1254" height="1254" alt="图片渲染示例素材：青色机器人站在绿色浮岛上，周围有红色游戏物件" fetchpriority="high"></a>
+        <figcaption>图片渲染示例素材，用于检查纹理显示；不是平台运行截图。</figcaption>
+      </figure>
+    </div>
+    <div class="container">
+      <nav class="platform-strip" aria-label="按平台查看 API">
+        <a class="platform-link platform-wechat" href="{{BASE}}api/?platform=wechat"><span class="platform-label">微信小游戏 <small>WeChat</small></span><span class="platform-detail"><code>wx</code><span>{{WECHAT_COUNT}} 个目录入口</span><span aria-hidden="true">↗</span></span></a>
+        <a class="platform-link platform-douyin" href="{{BASE}}api/?platform=douyin"><span class="platform-label">抖音小游戏 <small>Douyin</small></span><span class="platform-detail"><code>tt</code><span>{{DOUYIN_COUNT}} 个目录入口</span><span aria-hidden="true">↗</span></span></a>
+        <a class="platform-link platform-tiktok" href="{{BASE}}api/?platform=tiktok"><span class="platform-label">TikTok <small>Mini Games</small></span><span class="platform-detail"><code>TTMinis.game</code><span>{{TIKTOK_COUNT}} 个目录入口</span><span aria-hidden="true">↗</span></span></a>
+      </nav>
+      <div class="metrics">
+        <div><strong>{{PLATFORM_COUNT}}</strong><span>独立平台宿主</span></div>
+        <div><strong>{{API_COUNT}}</strong><span>显式 API 名称，{{CATEGORY_COUNT}} 类能力</span></div>
+        <div><strong>54 / 58</strong><span>微信抖音 / TikTok 源码示例入口</span></div>
+        <div><strong>4</strong><span>异步、同步、对象与事件契约</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head"><h2>让游戏逻辑，接上平台能力。</h2><p>从 Construct 中的事件，到宿主真实回调，每一层都有明确的职责。</p></div>
+      <div class="feature-grid">
+        <article class="feature feature-addon">
+          <div><h3>事件表与 JavaScript</h3><p>19 个动作、11 个条件、14 个表达式。通过同一插件接入登录、存储、弹窗、键盘与更多原生 API。</p><a href="{{BASE}}addon/">查看插件用法 <span aria-hidden="true">→</span></a></div>
+          <figure><img src="{{BASE}}assets/screenshots/construct-plugin-properties.jpg" width="360" height="290" loading="lazy" alt="Construct 编辑器中的 MiniGameBridge 对象与平台属性配置"><figcaption>MiniGameBridge 的真实项目配置</figcaption></figure>
+        </article>
+        <article class="feature"><h3>HTML5 转小游戏工程</h3><p>检查真实导出，打包本地脚本和资源，生成平台入口与构建报告。同一条转换流程，分别生成微信、抖音和 TikTok 配置。</p><a href="{{BASE}}guide/">查看转换流程 <span aria-hidden="true">→</span></a></article>
+        <article class="feature feature-runtime"><h3>宿主 API 与运行时适配</h3><p>桥接 Canvas、触摸、存储、网络与音频；支持四类调用契约，保留原生结果与真实失败。</p><a href="{{BASE}}api/">浏览 API 目录 <span aria-hidden="true">→</span></a></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section muted" id="workflow">
+    <div class="container">
+      <div class="section-head"><h2>四步跑通第一个小游戏。</h2><p>准备 Node.js 22+、Construct 3，以及对应平台的开发者工具。</p></div>
+      <ol class="steps">
+        <li><h3>安装桥接插件</h3><p>安装 .c3addon，在项目中添加 MiniGameBridge 对象，初始化后调用平台能力。</p><a href="{{BASE}}downloads/C3MiniGameBridge.c3addon" download>下载插件 <span aria-hidden="true">↓</span></a></li>
+        <li><h3>从 Construct 导出</h3><p>用示例工程开始，选择 HTML5 导出，解压 ZIP 并保留完整目录结构。</p><a href="{{BASE}}downloads/MiniGameApiSuite.c3p" download>下载示例 .c3p <span aria-hidden="true">↓</span></a></li>
+        <li><h3>选择目标平台</h3><p>运行 inspect 检查，再运行 convert；指定平台、AppID 与输出路径。</p><a href="{{BASE}}guide/">查看完整命令 <span aria-hidden="true">→</span></a></li>
+        <li><h3>导入小游戏 IDE</h3><p>导入生成的输出目录，检查 runtime-ready、画面和交互，再开展真机验证。</p><a href="{{BASE}}validation/">查看已验证范围 <span aria-hidden="true">→</span></a></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container sdk-layout">
+      <div><p class="eyebrow">MINIGAMEBRIDGE</p><h2>原生能力，直接在游戏里调用。</h2><p class="hero-desc">先检测能力，再发起调用。平台未提供的方法会明确报错，原生事件和异步结果都可在 Construct 中处理。</p><div class="tag-list"><span>系统信息</span><span>交互反馈</span><span>存储与文件</span><span>音频</span><span>网络</span><span>生命周期</span><span>广告与分享</span><span>TikTok IAP</span></div><a href="{{BASE}}api/">搜索 {{API_COUNT}} 个 API 名称 <span aria-hidden="true">→</span></a></div>
+      <pre><code>// Construct 项目脚本
 const bridge = runtime.objects
   .MiniGameBridge.getFirstInstance();
 
@@ -19,7 +73,31 @@ if (bridge.supportsAPI("showToast")) {
   } catch (error) {
     console.error(error.code, error.message);
   }
-}</code></pre></div></section>
-<section class="section muted"><div class="container"><div class="section-head"><p class="eyebrow">验证状态 / 2026.09.20</p><h2>已完成什么，下一步测什么。</h2><p>能力目录表示接入范围。平台权限、实际设备和业务配置，仍决定每个 API 的最终表现。</p></div><div class="verification"><div><h3>0.2.0 微信 IDE · 真实引擎记录</h3><p>历史 51 项示例从 Construct r495.2 实际导出，WebGL2 渲染与 runtime-ready 已确认。17 项自检全部成功，并实测菜单、键盘输入、音频停止与自然结束等交互。</p><a href="{{BASE}}validation/">阅读实测记录 →</a></div><div><h3>三端接入 · 分别验收</h3><p>0.3.0 已从真实 Construct 导出完成三端构建；微信 IDE 已验证启动、53 个入口和分类导航，新版自检尚未重跑。新增 TikTok 原生契约与 IAP 调用，尚无 TikTok IDE、真机或真实支付验证；抖音 IDE、三端真机及全部业务仍需另验。微信 IDE Modal 的已知错误仍未修复。</p><a href="{{BASE}}troubleshooting/">查看已知问题 →</a></div></div></div></section>
-<section class="section"><div class="container"><div class="section-head"><p class="eyebrow">FAQ</p><h2>开始之前，你可能想知道。</h2></div><div class="faq"><details open><summary>安装插件后，会新增一个小游戏导出选项吗？</summary><p>当前不会。MiniGameBridge 提供 Construct 内的平台调用接口；先导出 HTML5，再由独立 CLI 转换成微信、抖音或 TikTok 原生小游戏工程。</p></details><details><summary>可以直接运行任意 H5 或第三方 JS SDK 吗？</summary><p>不能保证。小游戏并非完整浏览器，本项目仅实现需要的 DOM、存储、网络和音频兼容。依赖页面布局、远程脚本或完整浏览器环境的 SDK 需要逐项适配。</p></details><details><summary>目录中的 API 都经过真实设备测试了吗？</summary><p>没有。当前目录有 {{API_COUNT}} 个唯一名称：微信 {{WECHAT_COUNT}}、抖音 {{DOUYIN_COUNT}}、TikTok {{TIKTOK_COUNT}}。历史微信 IDE 基线为 133 / 171 个方法可用、17 项自检通过；这个历史结果不证明新增接口和 TikTok 已通过实测。</p></details><details><summary>TikTok 支付回调可以直接发货吗？</summary><p>不可以。客户端回调只用于结束面板流程；服务端应验证 Webhook、核对订单并幂等发货，游戏向自己的后端查询最终状态。<a href="{{BASE}}tiktok-iap/">查看 IAP 接入指南 →</a></p></details><details><summary>公开仓库包含 Construct 引擎吗？</summary><p>仓库提供适配源码、插件和 .c3p 示例。请用自己的 Construct 编辑器导出 HTML5，再执行转换。Construct 引擎和 SDK 的适用条款属于相应权利方。</p></details></div><div class="actions"><a class="button primary" href="{{BASE}}guide/">开始第一次导出 →</a><a class="button" href="{{REPO}}">在 GitHub 查看项目 ↗</a></div></div></section>
+}</code></pre>
+    </div>
+  </section>
+
+  <section class="section muted">
+    <div class="container">
+      <div class="section-head"><h2>已完成什么，下一步测什么。</h2><p>能力目录表示接入范围。平台权限、实际设备和业务配置，仍决定每个 API 的最终表现。</p></div>
+      <div class="verification">
+        <div><h3>微信 IDE 的真实引擎记录</h3><p>历史 0.2.0 的 51 项示例从 Construct r495.2 实际导出，WebGL2 渲染与 runtime-ready 已确认。17 项自检全部成功，并实测菜单、键盘输入、音频停止与自然结束等交互。</p><a href="{{BASE}}validation/">阅读实测记录 <span aria-hidden="true">→</span></a></div>
+        <div><h3>三端接入，分别验收</h3><p>0.3.0 已完成三端构建，微信 IDE 已验证启动、53 个入口和分类导航。TikTok iOS 用户截图已显示 57 入口页面并进入存储分类，同时报告回读失败；修复后的存储与设备读数待复测。抖音 / TikTok IDE、真机完整功能与真实支付仍待验收，微信 IDE Modal 的已知错误仍未修复。</p><a href="{{BASE}}troubleshooting/">查看已知问题 <span aria-hidden="true">→</span></a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container faq-layout">
+      <div class="section-head"><h2>开始之前，<br>你可能想知道。</h2><a href="{{BASE}}troubleshooting/">更多常见问题 <span aria-hidden="true">→</span></a></div>
+      <div class="faq">
+        <details open><summary>安装插件后，会新增一个小游戏导出选项吗？</summary><p>当前不会。MiniGameBridge 提供 Construct 内的平台调用接口；先导出 HTML5，再由独立 CLI 转换成微信、抖音或 TikTok 原生小游戏工程。</p></details>
+        <details><summary>可以直接运行任意 H5 或第三方 JS SDK 吗？</summary><p>不能保证。小游戏并非完整浏览器，本项目仅实现需要的 DOM、存储、网络和音频兼容。依赖页面布局、远程脚本或完整浏览器环境的 SDK 需要逐项适配。</p></details>
+        <details><summary>目录中的 API 都经过真实设备测试了吗？</summary><p>没有。当前目录有 {{API_COUNT}} 个唯一名称：微信 {{WECHAT_COUNT}}、抖音 {{DOUYIN_COUNT}}、TikTok {{TIKTOK_COUNT}}。历史微信 IDE 基线为 133 / 171 个方法可用、17 项自检通过；这个历史结果不证明新增接口和 TikTok 已通过实测。</p></details>
+        <details><summary>TikTok 支付回调可以直接发货吗？</summary><p>不可以。客户端回调只用于结束面板流程；服务端应验证 Webhook、核对订单并幂等发货，游戏向自己的后端查询最终状态。<a href="{{BASE}}tiktok-iap/">查看 IAP 接入指南 →</a></p></details>
+        <details><summary>公开仓库包含 Construct 引擎吗？</summary><p>仓库提供适配源码、插件和 .c3p 示例。请用自己的 Construct 编辑器导出 HTML5，再执行转换。Construct 引擎和 SDK 的适用条款属于相应权利方。</p></details>
+      </div>
+    </div>
+    <div class="container closing-actions"><a class="button primary" href="{{BASE}}guide/">开始接入 <span aria-hidden="true">→</span></a><a class="button" href="{{REPO}}">在 GitHub 查看项目 <span aria-hidden="true">↗</span></a></div>
+  </section>
 </main>

@@ -60,5 +60,10 @@ if (filterForm) {
   filterForm.addEventListener('reset', () => setTimeout(update, 0));
   const params = new URLSearchParams(location.search);
   if (params.has('q')) filterForm.elements.search.value = params.get('q');
+  for (const name of ['platform', 'kind', 'category']) {
+    const value = params.get(name);
+    const field = filterForm.elements[name];
+    if (value && [...field.options].some(option => option.value === value)) field.value = value;
+  }
   update();
 }

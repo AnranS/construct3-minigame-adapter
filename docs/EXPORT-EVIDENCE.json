@@ -823,5 +823,49 @@
         "scope": "The exported runtime includes the current addon implementation, including TikTok platform enumeration and keyboard options. This is export evidence, not TikTok/device/payment validation."
       }
     }
+  },
+  "currentSourceIteration": {
+    "id": "image-demo-source",
+    "recordedOn": "2026-09-21",
+    "sourceProject": {
+      "path": "examples/construct/MiniGameApiSuite.c3p",
+      "bytes": 1643373,
+      "sha256": "cd50ab64763f197d7188d6c70a0d873baf2ddd725e58336f373f693ece8277d7"
+    },
+    "projectScript": {
+      "path": "examples/construct/api-demo-main.js",
+      "bytes": 47683,
+      "sha256": "05859f81066e8635a2e6d8880dcb65b74c0332aa61386094ecb5e0ea44dbd567"
+    },
+    "image": {
+      "path": "examples/construct/assets/render-test.png",
+      "bytes": 1508625,
+      "sha256": "3c656b191a513c0911e03045203f5e20110ecaca802fac0c2486637776194142"
+    },
+    "demo": {
+      "wechat": {
+        "featureEntries": 54,
+        "categories": 13
+      },
+      "douyin": {
+        "featureEntries": 54,
+        "categories": 13
+      },
+      "tiktok": {
+        "featureEntries": 58,
+        "categories": 14
+      }
+    },
+    "automatedTests": {
+      "command": "npm test",
+      "passed": 324,
+      "failed": 0,
+      "skipped": 0
+    },
+    "smokeBuild": "passed: addon + wechat/douyin/tiktok protocol fixtures",
+    "editorExportComplete": false,
+    "imageIDERenderVerified": false,
+    "physicalDeviceImageVerified": false,
+    "note": "The current source project contains the image rendering demo. Construct file selection did not open during this update, so it has not been re-exported. Retained HTML5 and native packages do not include the image demo. Previous release evidence is historical."
   }
 }

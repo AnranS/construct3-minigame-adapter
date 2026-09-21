@@ -1,14 +1,16 @@
 /*
  * Real Construct project script: replace the project's scripts/main.js with this
- * file, then export again in Construct. UI is made only from the existing Text
- * object type. No HTML, external canvas renderer, or synthetic native input.
+ * file, then export again in Construct. UI uses Text; the image test uses a
+ * real RenderTestSprite object. No HTML or external canvas renderer is used.
  *
  * Project: Text origin Top-left; Layer 0 = 2D; viewport 390 x 844.
- * Import beep.wav under project Files so its exported path is beep.wav.
+ * Import beep.wav and render-test.png under project Files.
  * Configure only your own platform-issued rewarded ad unit below if required.
  *
  * Official references:
  * https://www.construct.net/en/make-games/manuals/construct-3/scripting/scripting-reference/plugin-interfaces/text
+ * https://www.construct.net/en/make-games/manuals/construct-3/scripting/scripting-reference/plugin-interfaces/sprite
+ * https://www.construct.net/en/make-games/manuals/construct-3/scripting/scripting-reference/interfaces/iassetmanager
  * https://www.construct.net/en/make-games/manuals/construct-3/scripting/scripting-reference/object-interfaces/iobjecttype
  * https://www.construct.net/en/make-games/manuals/construct-3/scripting/scripting-reference/layout-interfaces/ilayout/ilayer
  * https://www.construct.net/en/make-games/manuals/construct-3/scripting/scripting-reference/interfaces/istorage
@@ -17,6 +19,7 @@
 
 const DEMO_CONFIG = Object.freeze({
   audioPath: 'game/beep.wav',
+  renderImagePath: 'render-test.png',
   packagePath: 'game/data.json',
   rewardedAdUnitId: '',
   storageKey: 'c3-api-demo-value-v1',
@@ -65,6 +68,7 @@ function startApiDemo(runtime) {
   let activeAudio = null;
   let layoutSignature = '';
   let currentGroup = null;
+  let renderPreview = null;
   let page = { left: 0, top: 0, width: 390, height: 844, unit: 1, margin: 24 };
 
   function plain(value) {
@@ -112,6 +116,27 @@ function startApiDemo(runtime) {
       e.instance.sizePt = e.size * page.unit;
       e.instance.lineHeight = 2 * page.unit;
       e.instance.isVisible = !e.hidden && visibleY + e.height > 0 && visibleY < page.height;
+    }
+    if (renderPreview?.instance) {
+      const preview = renderPreview;
+      const visibleY = preview.y - scroll;
+      preview.instance.x = page.left + (preview.x + preview.width / 2) * page.unit;
+      preview.instance.y = page.top + (visibleY + preview.height / 2) * page.unit;
+      preview.instance.width = preview.width * page.unit;
+      preview.instance.height = preview.height * page.unit;
+      preview.instance.isVisible = preview.ready && currentGroup === rendering && visibleY + preview.height > 0 && visibleY < page.height;
+    }
+  }
+  function clearRenderPreview() {
+    const preview = renderPreview;
+    renderPreview = null;
+    if (!preview) return;
+    preview.cancelled = true;
+    if (preview.instance) {
+      preview.instance.isVisible = false;
+      // Do not destroy a Sprite while Construct is replacing its frame. The
+      // pending operation releases it in finally, without showing a late result.
+      if (!preview.loadingFrame) { preview.instance.destroy(); preview.instance = null; }
     }
   }
   function setStatus(row, message, kind = 'info') {
@@ -208,6 +233,45 @@ function startApiDemo(runtime) {
   write(subheading, 'Construct 3  ×  MiniGameBridge');
   write(hint, '先选分类，再点按功能 · 结果来自实际调用');
   write(footer, '绿色代表收到结果，未配置项不执行\n开发者工具验证不等于手机真机验证');
+
+  const rendering = addGroup('图片渲染');
+  const renderCaption = createText(9.3, colors.muted, false, 'center');
+  renderCaption.hidden = true;
+  const renderRow = addRow(rendering, 'render-image', '加载 / 隐藏测试图片', '点按加载包内 PNG，由 Construct Sprite 渲染', async () => {
+    if (renderPreview?.ready) {
+      clearRenderPreview(); reflow();
+      return outcome('图片已隐藏；再次点按可重新加载', 'info');
+    }
+    const spriteType = runtime.objects.RenderTestSprite;
+    if (!spriteType) throw new Error('工程缺少 RenderTestSprite，请重新打开并导出最新 .c3p');
+    clearRenderPreview();
+    const preview = {instance: null, ready: false, cancelled: false, loadingFrame: false, x: 0, y: 0, width: 0, height: 0};
+    renderPreview = preview;
+    try {
+      const blob = await runtime.assets.fetchBlob(DEMO_CONFIG.renderImagePath);
+      if (!blob?.size) throw new Error('包内 render-test.png 为空或未导出');
+      if (disposed || preview.cancelled) return outcome('已取消图片展示', 'info');
+      preview.instance = spriteType.createInstance(layer.index, 0, 0);
+      preview.instance.isVisible = false;
+      preview.instance.stopAnimation();
+      preview.loadingFrame = true;
+      await preview.instance.replaceCurrentAnimationFrame(blob);
+      if (disposed || preview.cancelled) return outcome('已取消图片展示', 'info');
+      const [imageWidth, imageHeight] = preview.instance.getImageSize();
+      if (!(imageWidth > 0 && imageHeight > 0)) throw new Error('Construct 未返回有效的图片尺寸');
+      Object.assign(preview, {ready: true, imageWidth, imageHeight});
+      write(renderCaption, '包内 PNG · 等比缩放 · 再次点按上方按钮可隐藏');
+      reflow();
+      return outcome(`${imageWidth} × ${imageHeight} px · Sprite 图片已加载，请核对下方画面`);
+    } finally {
+      preview.loadingFrame = false;
+      if (!preview.ready || preview.cancelled) {
+        if (preview.instance) { preview.instance.destroy(); preview.instance = null; }
+        if (renderPreview === preview) renderPreview = null;
+      }
+      reflow();
+    }
+  });
 
   const basic = addGroup('基础信息');
   const initRow = addRow(basic, 'init', '初始化插件', 'MiniGameBridge.init · 等待初始化', async () => {
@@ -571,9 +635,11 @@ function startApiDemo(runtime) {
   for (const group of demoGroups) {
     const count = group.rows.length;
     addRow(categoryMenu, `category-${groups.indexOf(group)}`, group.name, `${count} 项测试 · 点按进入`, () => {
+      clearRenderPreview();
       currentGroup = group; scroll = 0; reflow(); return outcome(`${count} 项测试 · 点按进入`, 'info');
     });
     const back = addRow(group, `back-${groups.indexOf(group)}`, '‹ 返回功能分类', '选择其他类别', () => {
+      clearRenderPreview();
       currentGroup = categoryMenu; scroll = 0; reflow(); return outcome('选择其他类别', 'info');
     });
     group.rows.splice(group.rows.indexOf(back), 1); group.rows.unshift(back);
@@ -600,6 +666,7 @@ function startApiDemo(runtime) {
       safeBottom = Math.min(50, Math.max(0, Number(info.windowHeight) + screenTop - Number(info.safeArea?.bottom) || 0));
     } catch { /* Unknown safe area is not reported as an API success. */ }
     const contentWidth = Math.max(140, width - margin * 2);
+    renderCaption.hidden = true;
     geometry(eyebrow, margin, safeTop + 20, contentWidth, 22);
     geometry(heading, margin, safeTop + 52, contentWidth, 47);
     geometry(subheading, margin, safeTop + 104, contentWidth, 24);
@@ -625,6 +692,18 @@ function startApiDemo(runtime) {
         geometry(row.arrow, width - margin - 20, y + 13, 20, 36);
         geometry(row.separator, margin, y + row.height - 5, contentWidth, 13);
         y += row.height + 8;
+        if (row === renderRow && renderPreview?.ready) {
+          const preview = renderPreview;
+          const scale = Math.min(contentWidth / preview.imageWidth, Math.min(300, height * 0.36) / preview.imageHeight);
+          preview.width = preview.imageWidth * scale;
+          preview.height = preview.imageHeight * scale;
+          preview.x = margin + (contentWidth - preview.width) / 2;
+          preview.y = y + 8;
+          y = preview.y + preview.height + 12;
+          renderCaption.hidden = false;
+          geometry(renderCaption, margin, y, contentWidth, 43);
+          y += 51;
+        }
       }
       y += 24;
     }
@@ -711,6 +790,7 @@ function startApiDemo(runtime) {
     const failures = [];
     for (const remove of cleanup.splice(0)) { try { remove(); } catch (error) { failures.push(error); } }
     try { activeAudio?.cancel(); } catch (error) { failures.push(error); }
+    try { clearRenderPreview(); } catch (error) { failures.push(error); }
     for (const element of elements) { try { element.instance.destroy(); } catch (error) { failures.push(error); } }
     if (globalThis.__C3ApiDemo === debugView) delete globalThis.__C3ApiDemo;
     if (failures.length) console.error(new AggregateError(failures, '示例页面部分原生资源未能释放'));
@@ -718,6 +798,9 @@ function startApiDemo(runtime) {
   const debugView = {
     dispose,
     getSnapshot: () => ({ platform, category: currentGroup?.name, scroll, maxScroll, pointerCount, touchCount,
+      renderImage: renderPreview ? {ready: renderPreview.ready, visible: !!renderPreview.instance?.isVisible,
+        imageWidth: renderPreview.imageWidth, imageHeight: renderPreview.imageHeight,
+        bounds: {x: renderPreview.x, y: renderPreview.y - scroll, width: renderPreview.width, height: renderPreview.height}} : null,
       rows: rows.map(row => ({ id: row.id, title: row.title, visible: !row.titleText.hidden, status: row.status, kind: row.kind, busy: row.busy,
         bounds: { x: page.margin, y: row.y - scroll, width: page.width - 2 * page.margin, height: row.height } })) })
   };

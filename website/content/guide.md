@@ -65,7 +65,7 @@ MiniGameBridge → On error
 
 ## 3. 先运行功能示例
 
-仓库中的 `examples/construct/MiniGameApiSuite.c3p` 是当前功能演示工程，可用 Construct 打开。其界面由真实 Construct Text 对象构成，当前源码在微信 / 抖音下包含 **12 个分类、53 个功能入口**，TikTok 下包含 **13 个分类、57 个入口**，其中支付入口只做能力与流程检查，不会实际付款。0.3.0 已由真实 Construct r495.2 重新导出并完成三端转换，微信 IDE 已显示 53 个入口并验证分类/返回导航，未运行新版自检或点击支付测试入口；历史 0.2.0 的 51 个入口、11 类和 17 项自检记录见[验证记录](../validation/)。
+仓库中的 `examples/construct/MiniGameApiSuite.c3p` 是当前功能演示工程，可用 Construct 打开。其功能界面使用真实 Construct Text 对象，当前源码在微信 / 抖音下包含 **54 个功能入口**，TikTok 下包含 **58 个入口**，其中支付入口只做能力与流程检查，不会实际付款。新增“图片渲染”分类使用 Construct Sprite 加载项目内 PNG 素材 `render-test.png`，用于检查图片加载与纹理显示；它不是 HTML 页面覆盖层。要测试新增分类，请在 Construct 中打开最新 `.c3p` 并重新导出 HTML5；旧 HTML5 导出不包含这项功能。新增分类仍待真实编辑器重新导出和平台运行验证，首页素材图不代表平台截图。0.3.0 已由真实 Construct r495.2 重新导出并完成三端转换，微信 IDE 已显示 53 个入口并验证分类/返回导航，未运行新版自检或点击支付测试入口；历史 0.2.0 的 51 个入口、11 类和 17 项自检记录见[验证记录](../validation/)。
 
 公开仓库提供 `.c3p` 工程和适配器源码，不包含 Construct 引擎的原始 HTML5 导出或 ZIP。请在 Construct 中打开这份工程，选择 **Export → HTML5**；初次验证建议关闭脚本压缩与离线支持。下方“导出自己的 Construct 项目”提供相同导出流程的操作截图。
 
@@ -88,7 +88,7 @@ dist/construct-tiktok/
 
 这些便利命令只转换你刚刚解压的 HTML5 文件，不会操作 Construct 编辑器或重新导出 `.c3p`。刚克隆仓库时，必须先完成上述编辑器导出与解压步骤。它们包含 `--experimental --overwrite`，会重建带有本工具标记的旧输出。首次或跨平台构建省略 `--appid` 时，AppID 留空；同平台且旧输出标记有效的 `--overwrite` 会保留旧 AppID。显式传入新值会覆盖，显式空字符串会清空。
 
-macOS 也可双击仓库中的 `构建微信小游戏.command` 或 `构建抖音小游戏.command`，按提示填写 AppID。它们读取同一份示例导出；缺少依赖时会提示先执行 `npm ci`。
+macOS 也可双击仓库中的 `build-wechat.command` 或 `build-douyin.command`，按提示填写 AppID。它们读取同一份示例导出；缺少依赖时会提示先执行 `npm ci`。
 
 ## 4. 导出自己的 Construct 项目
 
