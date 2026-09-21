@@ -1,0 +1,103 @@
+<main id="main">
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">CONSTRUCT 3 → MINI GAME</p>
+        <h1>Bring your Construct game <span>to mini-game platforms.</span></h1>
+        <p class="hero-desc">Turn an HTML5 export into a native mini-game project. Connect to WeChat, Douyin, and TikTok platform APIs with MiniGameBridge.</p>
+        <div class="actions">
+          <a class="button primary" href="{{BASE}}guide/">Get started <span aria-hidden="true">→</span></a>
+          <a class="button" href="{{ASSET_BASE}}downloads/C3MiniGameBridge.c3addon" download>Download addon <span aria-hidden="true">↓</span></a>
+        </div>
+      </div>
+      <figure class="hero-visual">
+        <a href="{{ASSET_BASE}}assets/render-test.png" aria-label="View the original image-rendering test asset"><img src="{{ASSET_BASE}}assets/render-test.png" width="1254" height="1254" alt="Image-rendering test asset: a cyan robot on a green floating island surrounded by red game objects" fetchpriority="high"></a>
+        <figcaption>An image-rendering test asset for checking textures, not a screenshot of a running mini-game.</figcaption>
+      </figure>
+    </div>
+    <div class="container">
+      <nav class="platform-strip" aria-label="Browse APIs by platform">
+        <a class="platform-link platform-wechat" href="{{BASE}}api/?platform=wechat"><span class="platform-label">WeChat <small>Mini Games</small></span><span class="platform-detail"><code>wx</code><span>{{WECHAT_COUNT}} catalog entries</span><span aria-hidden="true">↗</span></span></a>
+        <a class="platform-link platform-douyin" href="{{BASE}}api/?platform=douyin"><span class="platform-label">Douyin <small>Mini Games</small></span><span class="platform-detail"><code>tt</code><span>{{DOUYIN_COUNT}} catalog entries</span><span aria-hidden="true">↗</span></span></a>
+        <a class="platform-link platform-tiktok" href="{{BASE}}api/?platform=tiktok"><span class="platform-label">TikTok <small>Mini Games</small></span><span class="platform-detail"><code>TTMinis.game</code><span>{{TIKTOK_COUNT}} catalog entries</span><span aria-hidden="true">↗</span></span></a>
+      </nav>
+      <div class="metrics">
+        <div><strong>{{PLATFORM_COUNT}}</strong><span>Separate native hosts</span></div>
+        <div><strong>{{API_COUNT}}</strong><span>Explicit API names in {{CATEGORY_COUNT}} categories</span></div>
+        <div><strong>54 / 58</strong><span>Source demo entries: WeChat and Douyin / TikTok</span></div>
+        <div><strong>4</strong><span>Async, sync, object, and event contracts</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head"><h2>Connect game logic to platform APIs.</h2><p>From a Construct event to a real native callback, each layer has a clear role.</p></div>
+      <div class="feature-grid">
+        <article class="feature feature-addon">
+          <div><h3>Event sheets and JavaScript</h3><p>19 actions, 11 conditions, and 14 expressions. Use one addon for login, storage, dialogs, keyboards, and more native APIs.</p><a href="{{BASE}}addon/">Explore the addon <span aria-hidden="true">→</span></a></div>
+          <figure><img src="{{ASSET_BASE}}assets/screenshots/construct-plugin-properties.jpg" width="360" height="290" loading="lazy" alt="The MiniGameBridge object and its platform properties in the Construct editor"><figcaption>MiniGameBridge configuration in a real project</figcaption></figure>
+        </article>
+        <article class="feature"><h3>From HTML5 to a mini-game project</h3><p>Inspect a real export, bundle local scripts and assets, and generate the platform entry point and build report. One conversion workflow produces separate configurations for WeChat, Douyin, and TikTok.</p><a href="{{BASE}}guide/">See the conversion workflow <span aria-hidden="true">→</span></a></article>
+        <article class="feature feature-runtime"><h3>Native APIs and runtime compatibility</h3><p>Bridge Canvas, touch input, storage, networking, and audio. Four invocation contracts preserve native results and actual failures.</p><a href="{{BASE}}api/">Browse the API catalog <span aria-hidden="true">→</span></a></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section muted" id="workflow">
+    <div class="container">
+      <div class="section-head"><h2>Run your first mini-game in four steps.</h2><p>Prepare Node.js 22+, Construct 3, and the developer tools for your target platform.</p></div>
+      <ol class="steps">
+        <li><h3>Install the bridge addon</h3><p>Install the .c3addon, add a MiniGameBridge object to your project, and initialize it before calling platform APIs.</p><a href="{{ASSET_BASE}}downloads/C3MiniGameBridge.c3addon" download>Download addon <span aria-hidden="true">↓</span></a></li>
+        <li><h3>Export from Construct</h3><p>Start with the sample project, export to HTML5, and extract the ZIP while keeping its directory structure.</p><a href="{{ASSET_BASE}}downloads/MiniGameApiSuite.c3p" download>Download sample .c3p <span aria-hidden="true">↓</span></a></li>
+        <li><h3>Choose a target platform</h3><p>Run inspect, then convert. Set the platform, AppID, and output directory.</p><a href="{{BASE}}guide/">See the full commands <span aria-hidden="true">→</span></a></li>
+        <li><h3>Import into the mini-game IDE</h3><p>Import the generated directory. Check runtime-ready, rendering, and interaction, then test on real devices.</p><a href="{{BASE}}validation/">See what has been verified <span aria-hidden="true">→</span></a></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container sdk-layout">
+      <div><p class="eyebrow">MINIGAMEBRIDGE</p><h2>Call native APIs directly from your game.</h2><p class="hero-desc">Check availability before making a call. Missing native methods produce explicit errors, and Construct can handle both native events and asynchronous results.</p><div class="tag-list"><span>System information</span><span>User feedback</span><span>Storage and files</span><span>Audio</span><span>Networking</span><span>Lifecycle</span><span>Ads and sharing</span><span>TikTok IAP</span></div><a href="{{BASE}}api/">Search {{API_COUNT}} API names <span aria-hidden="true">→</span></a></div>
+      <pre><code>// Construct project script
+const bridge = runtime.objects
+  .MiniGameBridge.getFirstInstance();
+
+await bridge.init();
+
+if (bridge.supportsAPI("showToast")) {
+  try {
+    await bridge.callAPI("showToast", {
+      title: "Your mini-game is ready", icon: "none"
+    });
+  } catch (error) {
+    console.error(error.code, error.message);
+  }
+}</code></pre>
+    </div>
+  </section>
+
+  <section class="section muted">
+    <div class="container">
+      <div class="section-head"><h2>What works, and what still needs testing.</h2><p>The catalog defines the integration scope. Platform permissions, actual devices, and project configuration still determine how each API behaves.</p></div>
+      <div class="verification">
+        <div><h3>Real-engine evidence from WeChat IDE</h3><p>The historical 0.2.0 demo with 51 entries was exported from Construct r495.2. WebGL2 rendering and runtime-ready were confirmed. All 17 self-checks passed, with additional interaction checks for menus, keyboard input, audio stop, and natural playback completion.</p><a href="{{BASE}}validation/">Read the validation records <span aria-hidden="true">→</span></a></div>
+        <div><h3>Three integrations, separate acceptance tests</h3><p>Version 0.3.0 built for all three targets. WeChat IDE verified startup, 53 entries, and category navigation. A user-provided TikTok iOS screenshot showed the 57-entry page and storage category, alongside a reported readback failure; fixed storage and device-info behavior still need retesting. Douyin/TikTok IDE acceptance, complete device testing, and real payments remain outstanding. The known WeChat IDE Modal error is still unresolved.</p><a href="{{BASE}}troubleshooting/">See known issues <span aria-hidden="true">→</span></a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container faq-layout">
+      <div class="section-head"><h2>Before you begin,<br>you may want to know.</h2><a href="{{BASE}}troubleshooting/">More common questions <span aria-hidden="true">→</span></a></div>
+      <div class="faq">
+        <details open><summary>Does installing the addon add a mini-game export option?</summary><p>Not currently. MiniGameBridge exposes platform calls inside Construct. Export HTML5 first, then use the separate CLI to convert it into a native WeChat, Douyin, or TikTok mini-game project.</p></details>
+        <details><summary>Can it run any H5 game or third-party JavaScript SDK?</summary><p>That is not guaranteed. Mini-games do not provide a complete browser, and this project implements only the required DOM, storage, networking, and audio compatibility. SDKs that rely on page layout, remote scripts, or a full browser environment need individual adaptation.</p></details>
+        <details><summary>Has every API in the catalog been tested on a real device?</summary><p>No. The catalog currently has {{API_COUNT}} unique names: {{WECHAT_COUNT}} for WeChat, {{DOUYIN_COUNT}} for Douyin, and {{TIKTOK_COUNT}} for TikTok. The historical WeChat IDE baseline had 133 / 171 methods available and 17 self-checks passing. Those results do not verify newly added APIs or TikTok.</p></details>
+        <details><summary>Can I fulfill an order directly after a TikTok payment callback?</summary><p>No. The client callback only ends the payment-panel flow. Your server must verify the webhook, check the order, and fulfill it idempotently. The game queries your backend for the final status. <a href="{{BASE}}tiktok-iap/">Read the IAP integration guide →</a></p></details>
+        <details><summary>Does the public repository include the Construct engine?</summary><p>The repository provides adapter source, the addon, and .c3p examples. Export HTML5 with your own Construct editor, then run the converter. Applicable terms for the Construct engine and SDK belong to their respective rights holders.</p></details>
+      </div>
+    </div>
+    <div class="container closing-actions"><a class="button primary" href="{{BASE}}guide/">Get started <span aria-hidden="true">→</span></a><a class="button" href="{{REPO}}">View the project on GitHub <span aria-hidden="true">↗</span></a></div>
+  </section>
+</main>

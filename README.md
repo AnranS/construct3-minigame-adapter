@@ -2,15 +2,15 @@
 
 English | [简体中文](README.zh-CN.md)
 
-[Documentation](https://anrans.github.io/construct3-minigame-adapter/) · [Illustrated guide](https://anrans.github.io/construct3-minigame-adapter/guide/) · [GitHub](https://github.com/anrans/construct3-minigame-adapter)
+[Documentation](https://anrans.github.io/construct3-minigame-adapter/en/) · [Illustrated guide](https://anrans.github.io/construct3-minigame-adapter/en/guide/) · [GitHub](https://github.com/anrans/construct3-minigame-adapter)
 
 Convert Construct 3 HTML5 exports into native mini-game projects for WeChat, Douyin, and TikTok. This project includes the MiniGameBridge addon, an offline conversion CLI, and a runtime adapter. Games can call platform APIs from Construct event sheets or JavaScript.
 
-**Version 0.3.0 supports three separate native namespaces: `wx`, `tt`, and `TTMinis.game`, with payment calls, backend order polling, and server-side webhook signature helpers.** The catalog contains 194 API names across 21 categories. See the [API directory](https://anrans.github.io/construct3-minigame-adapter/api/) for contracts and platform differences. TikTok uses its native runtime, requires no SDK initialization, and is never aliased to Douyin's `tt`.
+**Version 0.3.0 supports three separate native namespaces: `wx`, `tt`, and `TTMinis.game`, with payment calls, backend order polling, and server-side webhook signature helpers.** The catalog contains 194 API names across 21 categories. See the [API directory](https://anrans.github.io/construct3-minigame-adapter/en/api/) for contracts and platform differences. TikTok uses its native runtime, requires no SDK initialization, and is never aliased to Douyin's `tt`.
 
-Before the image-demo update, version 0.3.0 was exported using the real Construct r495.2 editor and converted for all three targets. WeChat DevTools showed WebGL2 rendering, `runtime-ready`, 53 feature entries, working category/back navigation, and 0 errors with 2 warnings on the observed startup. A user-provided TikTok iOS screenshot showed 57 entries and navigation into the storage category, but also reported a storage readback failure; the fix5 storage and device-info changes still require phone verification. **The current self-checks and payment entries have not been exercised on a device; Douyin/TikTok IDE acceptance, full feature testing on all three platforms, and real payments remain unverified.** The historical WeChat IDE Modal/Worker error remains unresolved and has not been retested in this release. See [validation records](docs/VALIDATION.md) and [troubleshooting](https://anrans.github.io/construct3-minigame-adapter/troubleshooting/) for detailed and historical evidence.
+Before the image-demo update, version 0.3.0 was exported using the real Construct r495.2 editor and converted for all three targets. WeChat DevTools showed WebGL2 rendering, `runtime-ready`, 53 feature entries, working category/back navigation, and 0 errors with 2 warnings on the observed startup. A user-provided TikTok iOS screenshot showed 57 entries and navigation into the storage category, but also reported a storage readback failure; the fix5 storage and device-info changes still require phone verification. **The current self-checks and payment entries have not been exercised on a device; Douyin/TikTok IDE acceptance, full feature testing on all three platforms, and real payments remain unverified.** The historical WeChat IDE Modal/Worker error remains unresolved and has not been retested in this release. See [validation records](docs/VALIDATION.md) and [troubleshooting](https://anrans.github.io/construct3-minigame-adapter/en/troubleshooting/) for detailed and historical evidence.
 
-The public repository contains source, the addon, original test fixtures, and `.c3p` examples. **It does not distribute Construct engine HTML5 exports or mini-game builds containing that engine.** After cloning, open `MiniGameApiSuite.c3p` in Construct, export HTML5 yourself, then run the converter. Follow the steps below or the [getting started guide](https://anrans.github.io/construct3-minigame-adapter/guide/). Original local exports and historical evidence are retained separately.
+The public repository contains source, the addon, original test fixtures, and `.c3p` examples. **It does not distribute Construct engine HTML5 exports or mini-game builds containing that engine.** After cloning, open `MiniGameApiSuite.c3p` in Construct, export HTML5 yourself, then run the converter. Follow the steps below or the [getting started guide](https://anrans.github.io/construct3-minigame-adapter/en/guide/). Original local exports and historical evidence are retained separately.
 
 ## Components and workflow
 
@@ -237,7 +237,7 @@ npm run docs:check   # Check generated pages and links
 npm run docs:dev     # Start a local preview at the address printed in the terminal
 ```
 
-The site publishes adapter documentation, the addon package, and `.c3p` examples, not local Construct HTML5 exports. Pushes to `main` trigger the GitHub Actions build and deployment to [GitHub Pages](https://anrans.github.io/construct3-minigame-adapter/).
+The site publishes adapter documentation, the addon package, and `.c3p` examples, not local Construct HTML5 exports. Pushes to `main` trigger the GitHub Actions build and deployment to [GitHub Pages](https://anrans.github.io/construct3-minigame-adapter/en/).
 
 ## Upstream sources
 

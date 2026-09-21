@@ -1,8 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { marked } from 'marked';
-import { getAPICatalog, getAPISummary, API_PLATFORMS, API_PLATFORM_LABELS } from './api-catalog.mjs';
+import {fileURLToPath} from 'node:url';
+import {marked} from 'marked';
+import {getAPICatalog, getAPISummary, API_PLATFORMS, getAPIPlatformLabels} from './api-catalog.mjs';
+import {LOCALES, PAGE_SLUGS, messages} from './locales.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const out = path.join(root, 'dist/site');
@@ -10,80 +11,112 @@ const base = '/construct3-minigame-adapter/';
 const origin = 'https://anrans.github.io';
 const repo = 'https://github.com/AnranS/construct3-minigame-adapter';
 const version = JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8')).version;
-const apiSummary = getAPISummary();
-const tokens = { VERSION: version, API_COUNT: apiSummary.names, CATEGORY_COUNT: apiSummary.categories, WECHAT_COUNT: apiSummary.platforms.wechat, DOUYIN_COUNT: apiSummary.platforms.douyin, TIKTOK_COUNT: apiSummary.platforms.tiktok, PLATFORM_COUNT: API_PLATFORMS.length };
-const expand = source => source.replace(/\{\{([A-Z_]+)\}\}/g, (match, key) => Object.hasOwn(tokens, key) ? String(tokens[key]) : match);
-const pages = [
-  ['guide', '快速开始', '从安装 Construct 插件，到导出、转换和导入小游戏开发者工具。'],
-  ['addon', '插件与脚本', '使用 Construct 事件表和 JavaScript 调用小游戏原生能力。'],
-  ['api', 'API 参考', `搜索 ${apiSummary.names} 个原生 API 名称，查看微信、抖音、TikTok 的独立调用契约。`],
-  ['tiktok-iap', 'TikTok 支付', '接入 TikTok 原生支付面板、订单状态查询与服务端发货确认。', 'docs/TIKTOK-IAP.md'],
-  ['troubleshooting', '常见问题', '定位导出、初始化、存储、音频和微信 IDE 的常见问题。'],
-  ['validation', '验证记录', '查看自动化回归、真实编辑器导出及微信 IDE 实测范围。'],
-];
-const escape = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const link = (slug = '') => `${base}${slug ? `${slug}/` : ''}`;
+const summary = getAPISummary();
+const tokens = {VERSION: version, API_COUNT: summary.names, CATEGORY_COUNT: summary.categories, WECHAT_COUNT: summary.platforms.wechat, DOUYIN_COUNT: summary.platforms.douyin, TIKTOK_COUNT: summary.platforms.tiktok, PLATFORM_COUNT: API_PLATFORMS.length};
+const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const languageBase = locale => `${base}${locale === 'en' ? 'en/' : ''}`;
+const link = (slug = '', locale = 'zh-CN') => `${languageBase(locale)}${slug === '404' ? '404.html' : slug ? `${slug}/` : ''}`;
+const otherLocale = locale => locale === 'en' ? 'zh-CN' : 'en';
+const expand = (source, locale = 'zh-CN') => source.replace(/\{\{([A-Z_]+)\}\}/g, (match, key) => {
+  const values = {...tokens, BASE: languageBase(locale), ASSET_BASE: base, REPO: repo};
+  return Object.hasOwn(values, key) ? String(values[key]) : match;
+});
 const current = (slug, active) => slug === active ? ' aria-current="page"' : '';
-const brand = `<a class="brand" href="${base}" aria-label="Construct Mini Game 首页"><img src="${base}assets/favicon.svg" alt="" width="34" height="34"><span>Construct <small>Mini Game</small></span></a>`;
-const header = active => `<a class="skip-link" href="#main">跳到正文</a><header class="site-header"><div class="container nav-shell">${brand}<button type="button" class="menu-toggle" aria-expanded="false" aria-controls="primary-nav">导航</button><nav class="nav-links" id="primary-nav" aria-label="主导航"><a href="${base}"${current('',active)}>概览</a><a href="${link('guide')}"${current('guide',active)}>使用指南</a><a href="${link('api')}"${current('api',active)}>API 参考</a><a href="${link('validation')}"${current('validation',active)}>验证状态</a><a class="github" href="${repo}">GitHub ↗</a></nav></div></header>`;
-const footer = `<footer class="footer"><div class="container"><div>Construct Mini Game · v${version}<br>社区适配项目，与 Scirra、微信、抖音和 TikTok 官方无隶属关系。</div><nav class="footer-links" aria-label="页脚导航"><a href="${repo}">源码</a><a href="${link('guide')}">文档</a><a href="${repo}/issues">反馈问题</a><a href="${repo}/blob/main/docs/THIRD_PARTY_NOTICES.md">第三方声明</a></nav></div></footer>`;
-function shell({slug='', title, description, body}) {
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#087b3e"><title>${escape(title)} · Construct Mini Game</title><meta name="description" content="${escape(description)}"><link rel="canonical" href="${origin}${link(slug)}"><meta property="og:title" content="${escape(title)} · Construct Mini Game"><meta property="og:description" content="${escape(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${origin}${link(slug)}"><link rel="icon" type="image/svg+xml" href="${base}assets/favicon.svg"><link rel="stylesheet" href="${base}assets/site.css"><script type="module" src="${base}assets/site.js"></script></head><body>${header(slug)}${body}${footer}</body></html>`;
+
+function header(active, locale, anchorMap) {
+  const t = messages[locale], other = otherLocale(locale);
+  const navigation = ['', 'guide', 'api', 'validation'].map((slug, i) => `<a href="${link(slug, locale)}"${current(slug, active)}>${t.nav[i]}</a>`).join('');
+  return `<a class="skip-link" href="#main">${t.skip}</a><header class="site-header"><div class="container nav-shell"><a class="brand" href="${link('', locale)}" aria-label="${t.homeLabel}"><img src="${base}assets/favicon.svg" alt="" width="34" height="34"><span>Construct <small>Mini Game</small></span></a><nav class="nav-links" id="primary-nav" aria-label="${t.navLabel}">${navigation}<a class="github" href="${repo}">GitHub ↗</a></nav><div class="nav-actions"><a class="language-switch" data-language-switch data-language-anchors="${escape(JSON.stringify(anchorMap))}" href="${link(active, other)}" hreflang="${other}" lang="${other}" aria-label="${t.switchLabel}">${t.switchText}</a><button type="button" class="menu-toggle" aria-expanded="false" aria-controls="primary-nav">${t.menu}</button></div></div></header>`;
+}
+function footer(locale) {
+  const t = messages[locale];
+  return `<footer class="footer"><div class="container"><div>Construct Mini Game · v${version}<br>${t.disclaimer}</div><nav class="footer-links" aria-label="${t.footerLabel}"><a href="${repo}">${t.footer[0]}</a><a href="${link('guide', locale)}">${t.footer[1]}</a><a href="${repo}/issues">${t.footer[2]}</a><a href="${repo}/blob/main/docs/THIRD_PARTY_NOTICES.md">${t.footer[3]}</a></nav></div></footer>`;
+}
+function shell({slug = '', locale, title, description, body, anchorMap = {}}) {
+  const url = `${origin}${link(slug, locale)}`;
+  const alternatives = [...LOCALES.map(lang => `<link rel="alternate" hreflang="${lang}" href="${origin}${link(slug, lang)}">`), `<link rel="alternate" hreflang="x-default" href="${origin}${link(slug, 'zh-CN')}">`].join('');
+  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#087b3e"><title>${escape(title)} · Construct Mini Game</title><meta name="description" content="${escape(description)}"><link rel="canonical" href="${url}">${alternatives}<meta property="og:title" content="${escape(title)} · Construct Mini Game"><meta property="og:description" content="${escape(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${url}"><meta property="og:locale" content="${locale === 'en' ? 'en_US' : 'zh_CN'}"><link rel="icon" type="image/svg+xml" href="${base}assets/favicon.svg"><link rel="stylesheet" href="${base}assets/site.css"><script type="module" src="${base}assets/site.js"></script></head><body>${header(slug, locale, anchorMap)}${body}${footer(locale)}</body></html>`;
 }
 function markdown(source) {
-  const headings = [], used = new Map();
+  const headings = [], allHeadings = [], used = new Map();
   const renderer = new marked.Renderer();
-  renderer.heading = function ({tokens,depth}) {
-    const text = this.parser.parseInline(tokens), plain = text.replace(/<[^>]*>/g,'');
-    const key = plain.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,'-').replace(/^-|-$/g,'') || 'section';
-    const count = used.get(key) || 0; used.set(key,count+1);
-    const id = count ? `${key}-${count+1}` : key;
-    if (depth === 2) headings.push({id,text:plain});
+  renderer.heading = function ({tokens, depth}) {
+    const text = this.parser.parseInline(tokens), plain = text.replace(/<[^>]*>/g, '');
+    const key = plain.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'section';
+    const count = used.get(key) || 0; used.set(key, count + 1);
+    const id = count ? `${key}-${count + 1}` : key;
+    allHeadings.push({id, depth});
+    if (depth === 2) headings.push({id, text: plain});
     return `<h${depth} id="${escape(id)}">${text}</h${depth}>\n`;
   };
-  const html = marked.parse(source,{renderer}).replace(/<table>/g,'<div class="table-wrap"><table>').replace(/<\/table>/g,'</table></div>');
-  return {html,headings};
+  const html = marked.parse(source, {renderer}).replace(/<table>/g, '<div class="table-wrap"><table>').replace(/<\/table>/g, '</table></div>');
+  return {html, headings, allHeadings};
 }
-function apiTable() {
-  const catalog = getAPICatalog();
-  const categories = [...new Map(catalog.map(row=>[row.category,row.categoryLabel])).entries()];
-  const platformOptions = API_PLATFORMS.map(platform => `<option value="${platform}">${API_PLATFORM_LABELS[platform]}</option>`).join('');
-  const platformColumns = API_PLATFORMS.map(platform => `<th scope="col" data-platform-column="${platform}">${API_PLATFORM_LABELS[platform]} 契约</th>`).join('');
+function apiTable(locale) {
+  const t = messages[locale], platformLabels = getAPIPlatformLabels(locale), catalog = getAPICatalog(locale);
+  const categories = [...new Map(catalog.map(row => [row.category, row.categoryLabel])).entries()];
+  const platformOptions = API_PLATFORMS.map(platform => `<option value="${platform}">${platformLabels[platform]}</option>`).join('');
+  const columns = API_PLATFORMS.map(platform => `<th scope="col" data-platform-column="${platform}">${t.contract.replace('{platform}', platformLabels[platform])}</th>`).join('');
   const rows = catalog.map(row => {
     const contractText = Object.values(row.contracts).flat().join(' ');
     const attributes = API_PLATFORMS.map(platform => `data-${platform}="${row.kinds[platform] || ''}"`).join(' ');
     const cells = API_PLATFORMS.map(platform => {
-      if (!row.kinds[platform]) return `<td data-platform-cell="${platform}"><span class="unsupported">未列入</span></td>`;
+      if (!row.kinds[platform]) return `<td data-platform-cell="${platform}"><span class="unsupported">${t.unsupported}</span></td>`;
       const contract = row.contracts[platform].map(note => `<small>${escape(note)}</small>`).join('');
       return `<td data-platform-cell="${platform}"><span class="kind-badge">${escape(row.kinds[platform])}</span>${contract}</td>`;
     }).join('');
     return `<tr data-api-row data-search="${escape(`${row.name} ${row.category} ${row.categoryLabel} ${row.notes} ${contractText}`.toLowerCase())}" data-category="${escape(row.category)}" ${attributes} id="api-${escape(row.name)}"><td><code>${escape(row.name)}</code></td><td>${escape(row.categoryLabel)}</td>${cells}</tr>`;
   }).join('');
-  return `<section aria-labelledby="api-directory"><h2 id="api-directory">完整 API 目录</h2><p>目录从运行时源码生成。每个平台单独显示调用种类与契约；“未列入”不会沿用另一平台的同名方法。当前宿主是否提供方法，请使用 <code>supportsAPI()</code> 检测。TikTok 尚未完成 IDE、真机完整功能或真实支付验证。</p><form id="api-filters" class="api-filters" role="search" aria-label="筛选 API"><label class="search">搜索 API 或能力<input name="search" type="search" placeholder="例如 getStorage、键盘、pay" autocomplete="off"></label><label>目标平台<select name="platform"><option value="">全部平台</option>${platformOptions}</select></label><label>调用类型<select name="kind"><option value="">全部类型</option><option value="async">async · 异步调用</option><option value="sync">sync · 同步调用</option><option value="object">object · 原生对象</option><option value="event">event · 事件订阅</option></select></label><label>能力分类<select name="category"><option value="">全部分类</option>${categories.map(([v,t])=>`<option value="${escape(v)}">${escape(t)}</option>`).join('')}</select></label><div class="filter-footer"><span id="api-count" role="status" aria-live="polite">显示 ${catalog.length} / ${catalog.length} 个 API</span><button type="reset">重置筛选</button></div></form><div class="table-wrap"><table class="api-table"><thead><tr><th scope="col">API 名称</th><th scope="col">分类</th>${platformColumns}</tr></thead><tbody>${rows}</tbody></table></div><p id="api-empty" class="api-empty" hidden>没有匹配的 API。试试其他关键词，或重置筛选。</p></section>`;
+  const kinds = ['async', 'sync', 'object', 'event'].map((kind, i) => `<option value="${kind}">${t.kinds[i]}</option>`).join('');
+  const count = t.count.replace('{visible}', catalog.length).replace('{total}', catalog.length);
+  return `<section aria-labelledby="api-directory"><h2 id="api-directory">${t.apiDirectory}</h2><p>${t.apiIntro}</p><form id="api-filters" class="api-filters" role="search" aria-label="${t.filterLabel}"><label class="search">${t.search}<input name="search" type="search" placeholder="${t.searchPlaceholder}" autocomplete="off"></label><label>${t.platform}<select name="platform"><option value="">${t.allPlatforms}</option>${platformOptions}</select></label><label>${t.kind}<select name="kind"><option value="">${t.allKinds}</option>${kinds}</select></label><label>${t.category}<select name="category"><option value="">${t.allCategories}</option>${categories.map(([v, label]) => `<option value="${escape(v)}">${escape(label)}</option>`).join('')}</select></label><div class="filter-footer"><span id="api-count" role="status" aria-live="polite">${count}</span><button type="reset">${t.reset}</button></div></form><div class="table-wrap"><table class="api-table"><thead><tr><th scope="col">${t.apiName}</th><th scope="col">${t.categoryColumn}</th>${columns}</tr></thead><tbody>${rows}</tbody></table></div><p id="api-empty" class="api-empty" hidden>${t.empty}</p></section>`;
 }
-const home = await fs.readFile(path.join(root,'website/home.html'),'utf8');
-const homeBody = expand(home.replaceAll('{{BASE}}',base).replaceAll('{{REPO}}',repo));
-await fs.mkdir(out,{recursive:true});
-await fs.cp(path.join(root,'website/assets'),path.join(out,'assets'),{recursive:true});
-await fs.mkdir(path.join(out,'downloads'),{recursive:true});
-for (const [source,name] of [['dist/C3MiniGameBridge.c3addon','C3MiniGameBridge.c3addon'],['examples/construct/MiniGameApiSuite.c3p','MiniGameApiSuite.c3p']]) await fs.copyFile(path.join(root,source),path.join(out,'downloads',name));
-await fs.writeFile(path.join(out,'index.html'),shell({title:'Construct 游戏的小游戏适配工具',description:'Construct 3 微信 / 抖音 / TikTok 小游戏插件、原生导出转换与 API 文档。',body:homeBody}));
-for (const [slug,title,description, customSource] of pages) {
-  const source = customSource || `website/content/${slug}.md`;
-  const {html,headings} = markdown(expand(await fs.readFile(path.join(root,source),'utf8')));
-  let articleHTML = html;
-  if (slug === 'api') {
-    const split = html.indexOf('<h2');
-    const jump = `<p><a class="button" href="#${escape(headings[0].id)}">阅读调用约定与代码示例 ↓</a></p>`;
-    articleHTML = html.slice(0, split) + jump + apiTable() + html.slice(split);
-    headings.unshift({id:'api-directory',text:'完整 API 目录'});
+
+// Compile both versions before writing pages so a missing translation cannot
+// silently turn an English route into a Chinese fallback.
+const documents = new Map();
+for (const locale of LOCALES) {
+  for (const slug of PAGE_SLUGS) {
+    const source = locale === 'en' ? `website/content/en/${slug}.md` : slug === 'tiktok-iap' ? 'docs/TIKTOK-IAP.md' : `website/content/${slug}.md`;
+    documents.set(`${locale}/${slug}`, {source, ...markdown(expand(await fs.readFile(path.join(root, source), 'utf8'), locale))});
   }
-  const navLinks = pages.map(([key,label])=>`<a href="${link(key)}"${current(key,slug)}>${label}</a>`).join('');
-  const body = `<main id="main" class="doc-layout"><aside class="doc-sidebar" aria-label="文档导航"><p class="sidebar-label">使用文档 · v${version}</p><nav>${navLinks}</nav><div class="sidebar-separator"><a href="${base}downloads/C3MiniGameBridge.c3addon" download>下载插件 ↓</a><a href="${base}downloads/MiniGameApiSuite.c3p" download>下载示例工程 ↓</a><a href="${repo}">GitHub ↗</a></div></aside><article class="doc-content"><details class="doc-mobile-nav"><summary>文档目录 · ${title}</summary><nav aria-label="移动端文档导航">${navLinks}</nav></details><p class="eyebrow">CONSTRUCT MINI GAME / ${slug.toUpperCase()}</p>${articleHTML}<div class="doc-bottom"><a href="${repo}/blob/main/${source}">在 GitHub 查看本文 ↗</a><span>文档版本 v${version}</span></div></article><aside class="doc-toc" aria-label="页内目录"><strong>本页内容</strong>${headings.map(h=>`<a href="#${escape(h.id)}">${escape(h.text)}</a>`).join('')}</aside></main>`;
-  await fs.mkdir(path.join(out,slug),{recursive:true});
-  await fs.writeFile(path.join(out,slug,'index.html'),shell({slug,title,description,body}));
 }
-await fs.writeFile(path.join(out,'404.html'),shell({title:'页面未找到',description:'返回 Construct Mini Game 文档。',body:`<main class="container section" id="main"><p class="eyebrow">404</p><h1>这个页面暂时不存在。</h1><p>可以从首页重新选择指南，或进入 API 目录搜索。</p><div class="actions"><a class="button primary" href="${base}">返回首页</a><a class="button" href="${link('api')}">API 参考</a></div></main>`}));
-await fs.writeFile(path.join(out,'.nojekyll'),'');
-await fs.writeFile(path.join(out,'sitemap.xml'),`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${['',...pages.map(p=>p[0])].map(slug=>`<url><loc>${origin}${link(slug)}</loc></url>`).join('')}</urlset>`);
-console.log(`Built ${pages.length+1} pages at ${out} (base: ${base})`);
+for (const slug of PAGE_SLUGS) {
+  const zh = documents.get(`zh-CN/${slug}`).allHeadings, en = documents.get(`en/${slug}`).allHeadings;
+  if (JSON.stringify(zh.map(h => h.depth)) !== JSON.stringify(en.map(h => h.depth))) throw new Error(`Heading structure differs between translations: ${slug}`);
+}
+await fs.mkdir(out, {recursive: true});
+await fs.cp(path.join(root, 'website/assets'), path.join(out, 'assets'), {recursive: true});
+await fs.mkdir(path.join(out, 'downloads'), {recursive: true});
+for (const [source, name] of [['dist/C3MiniGameBridge.c3addon', 'C3MiniGameBridge.c3addon'], ['examples/construct/MiniGameApiSuite.c3p', 'MiniGameApiSuite.c3p']]) await fs.copyFile(path.join(root, source), path.join(out, 'downloads', name));
+
+for (const locale of LOCALES) {
+  const t = messages[locale], localeOut = path.join(out, locale === 'en' ? 'en' : '');
+  await fs.mkdir(localeOut, {recursive: true});
+  const homeSource = locale === 'en' ? 'website/en/home.html' : 'website/home.html';
+  const home = expand(await fs.readFile(path.join(root, homeSource), 'utf8'), locale);
+  await fs.writeFile(path.join(localeOut, 'index.html'), shell({locale, title: t.homeTitle, description: t.homeDescription, body: home}));
+  for (const [index, slug] of PAGE_SLUGS.entries()) {
+    const [title, description] = t.pages[index];
+    const document = documents.get(`${locale}/${slug}`), counterpart = documents.get(`${otherLocale(locale)}/${slug}`);
+    const headings = [...document.headings];
+    const anchorMap = Object.fromEntries(document.allHeadings.map((h, i) => [h.id, counterpart.allHeadings[i].id]));
+    let articleHTML = document.html;
+    if (slug === 'api') {
+      const split = articleHTML.indexOf('<h2');
+      const jump = `<p><a class="button" href="#${escape(headings[0].id)}">${t.apiJump}</a></p>`;
+      articleHTML = articleHTML.slice(0, split) + jump + apiTable(locale) + articleHTML.slice(split);
+      headings.unshift({id: 'api-directory', text: t.apiDirectory});
+    }
+    const navLinks = PAGE_SLUGS.map((key, i) => `<a href="${link(key, locale)}"${current(key, slug)}>${t.pages[i][0]}</a>`).join('');
+    const body = `<main id="main" class="doc-layout"><aside class="doc-sidebar" aria-label="${t.docsNav}"><p class="sidebar-label">${t.docsLabel} · v${version}</p><nav>${navLinks}</nav><div class="sidebar-separator"><a href="${base}downloads/C3MiniGameBridge.c3addon" download>${t.downloadAddon}</a><a href="${base}downloads/MiniGameApiSuite.c3p" download>${t.downloadDemo}</a><a href="${repo}">GitHub ↗</a></div></aside><article class="doc-content"><details class="doc-mobile-nav"><summary>${t.mobileDocs} · ${title}</summary><nav aria-label="${t.mobileDocsLabel}">${navLinks}</nav></details><p class="eyebrow">CONSTRUCT MINI GAME / ${slug.toUpperCase()}</p>${articleHTML}<div class="doc-bottom"><a href="${repo}/blob/main/${document.source}">${t.viewSource}</a><span>${t.docsVersion} v${version}</span></div></article><aside class="doc-toc" aria-label="${t.tocLabel}"><strong>${t.toc}</strong>${headings.map(h => `<a href="#${escape(h.id)}">${escape(h.text)}</a>`).join('')}</aside></main>`;
+    await fs.mkdir(path.join(localeOut, slug), {recursive: true});
+    await fs.writeFile(path.join(localeOut, slug, 'index.html'), shell({slug, locale, title, description: expand(description, locale), body, anchorMap}));
+  }
+  const notFound = `<main class="container section" id="main"><p class="eyebrow">404</p><h1>${t.missingHeading}</h1><p>${t.missingText}</p><div class="actions"><a class="button primary" href="${link('', locale)}">${t.backHome}</a><a class="button" href="${link('api', locale)}">${t.pages[2][0]}</a></div></main>`;
+  await fs.writeFile(path.join(localeOut, '404.html'), shell({slug: '404', locale, title: t.missingTitle, description: t.missingDescription, body: notFound}));
+}
+await fs.writeFile(path.join(out, '.nojekyll'), '');
+const sitemapURLs = LOCALES.flatMap(locale => ['', ...PAGE_SLUGS].map(slug => `<url><loc>${origin}${link(slug, locale)}</loc></url>`));
+await fs.writeFile(path.join(out, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${sitemapURLs.join('')}</urlset>`);
+console.log(`Built ${LOCALES.length * (PAGE_SLUGS.length + 1)} localized pages and 2 error pages at ${out}`);

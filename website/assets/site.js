@@ -1,3 +1,34 @@
+const english = document.documentElement.lang === 'en';
+const text = english ? {
+  copy: 'Copy', copyLabel: 'Copy code', copied: 'Copied', copyFailed: 'Select and copy manually',
+  count: (visible, total) => `Showing ${visible} / ${total} APIs`,
+} : {
+  copy: '复制', copyLabel: '复制代码', copied: '已复制', copyFailed: '请手动选择复制',
+  count: (visible, total) => `显示 ${visible} / ${total} 个 API`,
+};
+const languageLink = document.querySelector('[data-language-switch]');
+const languageTarget = languageLink?.getAttribute('href');
+const languageAnchors = JSON.parse(languageLink?.dataset.languageAnchors || '{}');
+function updateLanguageLink() {
+  if (!languageLink) return;
+  const target = new URL(languageTarget, location.href);
+  target.search = location.search;
+  const form = document.querySelector('#api-filters');
+  if (form) {
+    for (const [field, parameter] of [['search', 'q'], ['platform', 'platform'], ['kind', 'kind'], ['category', 'category']]) {
+      const value = form.elements[field].value;
+      if (value) target.searchParams.set(parameter, value);
+      else target.searchParams.delete(parameter);
+    }
+  }
+  let anchor;
+  try { anchor = decodeURIComponent(location.hash.slice(1)); } catch { anchor = ''; }
+  target.hash = Object.hasOwn(languageAnchors, anchor) ? languageAnchors[anchor] : location.hash;
+  languageLink.href = target.href;
+}
+languageLink?.addEventListener('click', updateLanguageLink);
+window.addEventListener('hashchange', updateLanguageLink);
+
 const toggle = document.querySelector('.menu-toggle');
 const nav = document.querySelector('#primary-nav');
 const closeMenu = (restore = false) => {
@@ -21,14 +52,14 @@ nav?.addEventListener('click', event => { if (event.target.closest('a')) closeMe
 
 for (const pre of document.querySelectorAll('pre')) {
   const button = document.createElement('button');
-  button.type = 'button'; button.className = 'copy-button'; button.textContent = '复制';
-  button.setAttribute('aria-label', '复制代码');
+  button.type = 'button'; button.className = 'copy-button'; button.textContent = text.copy;
+  button.setAttribute('aria-label', text.copyLabel);
   button.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(pre.querySelector('code')?.textContent || '');
-      button.textContent = '已复制';
-    } catch { button.textContent = '请手动选择复制'; }
-    setTimeout(() => { button.textContent = '复制'; }, 2200);
+      button.textContent = text.copied;
+    } catch { button.textContent = text.copyFailed; }
+    setTimeout(() => { button.textContent = text.copy; }, 2200);
   });
   pre.append(button);
 }
@@ -51,8 +82,9 @@ if (filterForm) {
       row.hidden = !show;
       if (show) visible++;
     }
-    count.textContent = `显示 ${visible} / ${rows.length} 个 API`;
+    count.textContent = text.count(visible, rows.length);
     empty.hidden = visible !== 0;
+    updateLanguageLink();
   };
   filterForm.addEventListener('input', update);
   filterForm.addEventListener('change', update);
@@ -67,3 +99,4 @@ if (filterForm) {
   }
   update();
 }
+updateLanguageLink();

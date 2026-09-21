@@ -55,6 +55,9 @@ pre code { font-size: inherit; }
 .skip-link:focus { top: 8px; }
 .site-header { position: sticky; top: 0; z-index: 20; background: var(--surface-raised); border-bottom: 1px solid var(--line); }
 .nav-shell { height: var(--header); display: flex; align-items: center; justify-content: space-between; gap: 28px; }
+.nav-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.language-switch { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 6px 12px; border: 1px solid var(--line); border-radius: var(--control-radius); color: var(--ink); font-size: 13px; text-decoration: none; white-space: nowrap; }
+.language-switch:hover { border-color: var(--accent); background: var(--accent-soft); }
 .brand { display: inline-flex; gap: 11px; align-items: center; text-decoration: none; font-size: 18px; font-weight: 750; color: var(--ink); white-space: nowrap; letter-spacing: -.035em; }
 .brand img { width: 34px; height: 34px; }
 .brand span small { font-size: inherit; font-weight: 450; }
@@ -210,6 +213,7 @@ td { color: var(--muted); }
   .doc-toc { display: none; }
   .hero-grid { gap: 32px; }
   .nav-links { gap: 20px; }
+  .nav-shell { gap: 18px; }
   .brand { font-size: 16px; }
   .sdk-layout { gap: 40px; }
   .container { width: calc(100% - 48px); }
@@ -223,9 +227,12 @@ td { color: var(--muted); }
   :root { --header: 66px; }
   .container { width: calc(100% - 36px); }
   .nav-shell { gap: 16px; }
+  .nav-actions { gap: 8px; }
+  .language-switch { padding-inline: 9px; }
   .brand { font-size: 16px; }
   .brand img { width: 30px; height: 30px; }
-  .menu-toggle { display: block; }
+  .brand span small { display: block; font-size: 11px; line-height: 1.2; letter-spacing: .02em; }
+  .menu-toggle { display: block; padding-inline: 10px; }
   .nav-links { display: none; position: absolute; top: 65px; left: 0; right: 0; padding: 16px 24px 22px; background: var(--surface-raised); border-bottom: 1px solid var(--line); box-shadow: 0 12px 24px #244b3610; flex-direction: column; align-items: stretch; gap: 4px; }
   .nav-links.is-open { display: flex; }
   .nav-links a { padding: 11px 4px; }

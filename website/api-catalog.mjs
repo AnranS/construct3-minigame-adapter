@@ -29,8 +29,38 @@ export const API_CATEGORY_LABELS = Object.freeze({
 
 export const API_PLATFORMS = Object.freeze(['wechat', 'douyin', 'tiktok']);
 export const API_PLATFORM_LABELS = Object.freeze({ wechat: '微信', douyin: '抖音', tiktok: 'TikTok' });
+const ENGLISH_CATEGORY_LABELS = Object.freeze({
+  system: 'System information',
+  lifecycle: 'Lifecycle',
+  rendering: 'Rendering and fonts',
+  input: 'Touch, keyboard and mouse',
+  ui: 'Native UI',
+  keyboard: 'Native keyboard',
+  clipboard: 'Clipboard',
+  storage: 'Local storage',
+  network: 'Network and connections',
+  files: 'Files',
+  device: 'Device and sensors',
+  audio: 'Audio and recording',
+  media: 'Images, video and screen recording',
+  account: 'Login and settings',
+  share: 'Sharing',
+  navigation: 'Navigation and return visits',
+  ads: 'Advertising',
+  'open-data': 'Open data and leaderboards',
+  buttons: 'Native buttons',
+  analytics: 'Analytics',
+  payment: 'Payments',
+  payments: 'Payments',
+  subpackage: 'Subpackage loading',
+  subpackages: 'Subpackage loading'
+});
+const ENGLISH_PLATFORM_LABELS = Object.freeze({ wechat: 'WeChat', douyin: 'Douyin', tiktok: 'TikTok' });
 const platformOrder = API_PLATFORMS;
-const platformLabels = API_PLATFORM_LABELS;
+
+export function getAPIPlatformLabels(locale = 'zh-CN') {
+  return locale === 'en' ? ENGLISH_PLATFORM_LABELS : API_PLATFORM_LABELS;
+}
 
 /**
  * One row per exact native name, generated from the runtime directory.
@@ -39,7 +69,11 @@ const platformLabels = API_PLATFORM_LABELS;
  * The result only contains JSON-compatible plain values and is safe to embed
  * as data (the renderer remains responsible for HTML/script escaping).
  */
-export function getAPICatalog() {
+export function getAPICatalog(locale = 'zh-CN') {
+  const english = locale === 'en';
+  const categoryLabels = english ? ENGLISH_CATEGORY_LABELS : API_CATEGORY_LABELS;
+  const platformLabels = getAPIPlatformLabels(locale);
+  const localize = (zh, en) => english ? en : zh;
   const rows = new Map();
 
   for (const entry of PLATFORM_API_CATALOG) {
@@ -47,7 +81,7 @@ export function getAPICatalog() {
       rows.set(entry.name, {
         name: entry.name,
         category: entry.category,
-        categoryLabel: API_CATEGORY_LABELS[entry.category] || entry.category,
+        categoryLabel: categoryLabels[entry.category] || entry.category,
         kinds: Object.fromEntries(platformOrder.map(platform => [platform, null])),
         contracts: {},
         platforms: [],
@@ -78,43 +112,43 @@ export function getAPICatalog() {
     row.platforms = platformOrder.filter(platform => row.kinds[platform]);
     const notes = [];
     if (new Set(row.platforms.map(platform => row.kinds[platform])).size > 1) {
-      notes.push(row.platforms.map(platform => `${platformLabels[platform]} ${row.kinds[platform]}`).join('；'));
+      notes.push(row.platforms.map(platform => `${platformLabels[platform]} ${row.kinds[platform]}`).join(localize('；', '; ')));
     }
 
     const offNames = [...new Set(row.platforms.map(platform => row.metadata[platform].off).filter(Boolean))];
-    if (offNames.length) notes.push(`订阅要求对应取消接口：${offNames.join(' / ')}`);
+    if (offNames.length) notes.push(localize(`订阅要求对应取消接口：${offNames.join(' / ')}`, `Subscriptions require the corresponding unsubscribe method: ${offNames.join(' / ')}`));
 
     const interactionPlatforms = row.platforms.filter(platform => row.metadata[platform].interaction);
     if (interactionPlatforms.length) {
-      const prefix = interactionPlatforms.length === row.platforms.length ? '' : `${interactionPlatforms.map(platform => platformLabels[platform]).join('、')}：`;
-      notes.push(`${prefix}交互调用默认不设超时`);
+      const prefix = interactionPlatforms.length === row.platforms.length ? '' : `${interactionPlatforms.map(platform => platformLabels[platform]).join(localize('、', ', '))}${localize('：', ': ')}`;
+      notes.push(`${prefix}${localize('交互调用默认不设超时', 'Interactive calls have no timeout by default')}`);
     }
 
     const noOptionsPlatforms = row.platforms.filter(platform => row.metadata[platform].noOptions);
-    if (noOptionsPlatforms.length) notes.push('原生入口不传 options 参数');
+    if (noOptionsPlatforms.length) notes.push(localize('原生入口不传 options 参数', 'The native method is called without an options argument'));
 
     for (const platform of row.platforms) {
       if (row.metadata[platform].completion === 'not-observable') {
-        notes.push(`${platformLabels[platform]}不提供完成回调，返回值不代表分享成功`);
+        notes.push(localize(`${platformLabels[platform]}不提供完成回调，返回值不代表分享成功`, `${platformLabels[platform]} provides no completion callback; the return value does not confirm successful sharing`));
       }
     }
     for (const platform of row.platforms) {
       const metadata = row.metadata[platform];
       const contract = [];
-      if (metadata.syncFallback) contract.push(`优先原生同名方法；缺失时映射 ${metadata.syncFallback}，返回实际结果`);
-      if (metadata.offMode === 'all') contract.push('宿主取消接口影响全部监听；桥接仅停用自身回调');
-      else if (metadata.offMode === 'none') contract.push('无原生撤销接口；桥接仅停用自身回调');
-      else if (metadata.off) contract.push(`需 ${metadata.off} 撤销订阅`);
-      if (metadata.executionScope === 'open-data') contract.push('仅开放数据域');
-      if (metadata.noOptions) contract.push('不传 options');
-      if (metadata.interaction) contract.push('默认不设超时');
-      if (metadata.completion === 'not-observable') contract.push('无完成回调，不能确认分享成功');
-      if (metadata.completion === 'client-callback-only') contract.push('客户端回调不确认付款/发货');
-      if (platform === 'tiktok' && row.name === 'pay') contract.push('参数 trade_order_id');
-      if (['wechat', 'tiktok'].includes(platform) && row.name === 'showKeyboard') contract.push('快捷动作显式 keyboardType: text');
+      if (metadata.syncFallback) contract.push(localize(`优先原生同名方法；缺失时映射 ${metadata.syncFallback}，返回实际结果`, `Prefer the same-name native method; if absent, call ${metadata.syncFallback} and return its actual result`));
+      if (metadata.offMode === 'all') contract.push(localize('宿主取消接口影响全部监听；桥接仅停用自身回调', 'The native unsubscribe method affects all listeners; the bridge only deactivates its own callbacks'));
+      else if (metadata.offMode === 'none') contract.push(localize('无原生撤销接口；桥接仅停用自身回调', 'No native unsubscribe method; the bridge only deactivates its own callbacks'));
+      else if (metadata.off) contract.push(localize(`需 ${metadata.off} 撤销订阅`, `Requires ${metadata.off} to unsubscribe`));
+      if (metadata.executionScope === 'open-data') contract.push(localize('仅开放数据域', 'Open data context only'));
+      if (metadata.noOptions) contract.push(localize('不传 options', 'No options argument'));
+      if (metadata.interaction) contract.push(localize('默认不设超时', 'No timeout by default'));
+      if (metadata.completion === 'not-observable') contract.push(localize('无完成回调，不能确认分享成功', 'No completion callback; successful sharing cannot be confirmed'));
+      if (metadata.completion === 'client-callback-only') contract.push(localize('客户端回调不确认付款/发货', 'Client callbacks do not confirm payment or fulfillment'));
+      if (platform === 'tiktok' && row.name === 'pay') contract.push(localize('参数 trade_order_id', 'Parameter: trade_order_id'));
+      if (['wechat', 'tiktok'].includes(platform) && row.name === 'showKeyboard') contract.push(localize('快捷动作显式 keyboardType: text', 'The shortcut action explicitly sets keyboardType: text'));
       row.contracts[platform] = contract;
     }
-    row.notes = notes.join('。');
+    row.notes = notes.join(localize('。', '. '));
   }
 
   return [...rows.values()];
