@@ -152,11 +152,15 @@ node src/cli.mjs inspect --input ./exports/my-game
 
 `fix2` 的 TikTok iOS 真机诊断已捕获 `STARTUP_FAILED`，阶段为 `runtime-interface-init`，错误为 `Can only call Window.queueMicrotask on instances of Window`。本地已复现：旧实现将底层全局函数绑定到 `GameGlobal`，但该函数要求真实 Window 作为 `this`，消息通道初始化因此失败。随后再次绑定到引擎兼容对象也无法纠正第一次绑定。
 
-请使用 `fix3`，或更新源码后重新转换原始 HTML5 导出，并确认启动日志包含 `build=host-receiver-3`。修复分别捕获真实全局环境和 `GameGlobal`；两者共享的函数使用原始全局接收对象，小游戏独有方法保留自己的接收对象。相同处理覆盖定时器、rAF、`queueMicrotask`、`atob` / `btoa` 和 `structuredClone`，裸定时器也统一通过引擎作用域。
+`fix3` 曾尝试分别捕获全局环境和 `GameGlobal`，为两者共享的函数重新绑定接收对象。该方案通过了本地模拟宿主检查，但用户确认含 `build=host-receiver-3` 标记的新包在手机上仍出现同一错误，已经排除误用旧包。重新绑定没有适配真实宿主；现有证据不足以确认手机的 `globalThis` 是否为代理对象。
 
 这里的 `Window` 是底层函数的类型检查，不代表能直接使用完整网页 DOM。Construct 看到的 `window` / `self` 仍是适配层提供的兼容对象；修复没有把真实浏览器 DOM 引入小游戏。TikTok 官方对完整 DOM、CSS 和任意浏览器 API 的限制见 [Technical Overview](https://developers.tiktok.com/docs/en/mini-games-technical-overview)。
 
-此次修复针对已确认的函数绑定异常，**fix3 仍需在手机上验证实际 ready 和首帧**。若依旧灰屏，等待至少 15 秒并提供新的 `STARTUP_FAILED` 或 `STARTUP_WAIT` 完整日志，不能只根据构建完成或旧异常消失判定整个适配已通过。
+请使用 `fix4`，或更新源码后重新转换原始 HTML5 导出，确认启动日志包含 `build=promise-microtask-4`。TikTok 现在完全跳过原生 `queueMicrotask`，包括读取与探测，在引擎作用域创建时就安装 Promise 微任务队列，避免 Worker / MessageChannel 提前缓存旧函数。裸调用和 `self.queueMicrotask` 均使用该队列。
+
+队列保持异步和入队顺序，返回 `undefined`，忽略回调返回值；无效回调同步抛出 `TypeError`，回调异常进入启动诊断或错误日志。原生方法不被覆盖，也不会通过宿主 `window` / `document` 获取真实 DOM。完整包测试已覆盖“原生 queue 始终抛错、window/document 访问也抛错”的契约，消息通道与 Worker 可以完成启动。
+
+**fix4 的手机首帧仍待验证。** 若依旧灰屏，等待至少 15 秒并提供新的 `STARTUP_FAILED` 或 `STARTUP_WAIT` 完整日志；本地测试通过或旧异常消失都不能代替手机实际 ready、画面和输入验收。
 
 ## TikTok 检测不到宿主或支付没有发货
 

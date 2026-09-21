@@ -4,7 +4,7 @@ export function createStartupDiagnostics({host, readiness, platform, waitMs = 15
   const startedAt = Date.now();
   let state = 'starting', sequence = 0, stopped = false, timer, failure;
   const safeErrorText = value => String(value ?? '').replace(/https?:\/\/[^\s<>"')]+/gi, '[remote-url]');
-  const snapshot = () => ({build: 'host-receiver-3', platform, state, elapsedMs: Date.now() - startedAt,
+  const snapshot = () => ({build: 'promise-microtask-4', platform, state, elapsedMs: Date.now() - startedAt,
     pending: [...pending.values()], history: history.slice(), ...(failure ? {failure} : {})});
   const log = (level, message) => {
     try { host.console?.[level]?.(`[C3 MiniGame] ${message}`); } catch { /* Logging cannot break startup. */ }
@@ -106,7 +106,7 @@ export function createStartupDiagnostics({host, readiness, platform, waitMs = 15
     host.fetch = fetchObserved;
     restorers.push(() => { if (host.fetch === fetchObserved) host.fetch = originalFetch; });
   }
-  log('info', `boot platform=${platform} build=host-receiver-3`);
+  log('info', `boot platform=${platform} build=promise-microtask-4`);
   if (waitMs > 0 && typeof host.setTimeout === 'function') {
     timer = host.setTimeout(() => {
       timer = undefined;

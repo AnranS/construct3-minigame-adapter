@@ -124,7 +124,7 @@ runOnStartup(async () => {
 
 for (const strictMethods of [['queueMicrotask'], hostMethods]) {
   const checksAll = strictMethods.length > 1;
-  test(`TikTok packaged export uses the native Window receiver with separate GameGlobal (${checksAll ? 'all schedulers' : 'MessageChannel queueMicrotask'})`, {timeout: 15000}, async t => {
+  test(`TikTok packaged export preserves host isolation with separate GameGlobal (${checksAll ? 'all schedulers' : 'Promise-backed MessageChannel'})`, {timeout: 15000}, async t => {
     const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'c3-host-receiver-'));
     t.after(() => fs.rm(temp, {recursive: true, force: true}));
     const input = path.join(temp, 'fixture'), output = path.join(temp, 'tiktok');
@@ -154,6 +154,10 @@ for (const strictMethods of [['queueMicrotask'], hostMethods]) {
     }
     const called = Array.from(context.nativeOwnerCalls);
     for (const name of strictMethods) {
+      if (name === 'queueMicrotask') {
+        assert.equal(called.filter(call => call.name === name).length, 0, 'TikTok uses Promise jobs without borrowing Window.queueMicrotask');
+        continue;
+      }
       assert.ok(called.some(call => call.name === name), `${name} is exercised`);
       assert.ok(called.filter(call => call.name === name).every(call => call.correctOwner), `${name} retains the real VM globalThis owner`);
     }

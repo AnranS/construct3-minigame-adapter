@@ -48,15 +48,29 @@
 
 ## 2026-09-21 fix3：原生全局方法接收对象修复
 
-用户使用 `fix2` 在 TikTok iOS 真机再次运行，新增诊断捕获到 `STARTUP_FAILED`，阶段为 `runtime-interface-init`，错误为 `TypeError: Can only call Window.queueMicrotask on instances of Window`。堆栈从原生 `queueMicrotask` 指向 `MessagePort.start` 和 `onmessage` 赋值。本地严格模拟宿主已复现同文异常，确认了此次初始化失败的直接原因。
+用户使用 `fix2` 在 TikTok iOS 真机再次运行，新增诊断捕获到 `STARTUP_FAILED`，阶段为 `runtime-interface-init`，错误为 `TypeError: Can only call Window.queueMicrotask on instances of Window`。堆栈从原生 `queueMicrotask` 指向 `MessagePort.start` 和 `onmessage` 赋值。本地严格模拟宿主复现了同文异常，验证了错误接收对象可以触发此失败；这并未证明模拟宿主完整还原了手机实际的全局对象。
 
 旧实现将从 `GameGlobal` 读取的 `queueMicrotask` 首次绑定到 `GameGlobal`；该宿主实际提供的是要求真实 Window 接收对象的函数。引擎兼容作用域中的再次 `bind` 无法覆盖第一次绑定，导致消息通道启动时触发底层类型检查。报错中的 `Window` 指底层函数要求的接收对象类型，不表示小游戏提供了完整浏览器。
 
 `fix3` 在构建入口分别捕获真实全局对象与 `GameGlobal`。当两者引用同一个全局函数时，按原始全局环境绑定；小游戏宿主独有的方法仍绑定到 `GameGlobal`。白名单覆盖定时器及取消方法、rAF 及取消方法、`queueMicrotask`、`atob`、`btoa` 和 `structuredClone`，裸定时器调用也统一经过引擎作用域。引擎中的 `window` / `self` 仍是适配层兼容对象，此修复不引入宿主真实 DOM、浏览器事件或网络实现。TikTok 官方也说明原生小游戏环境不具备完整浏览器能力，不能依赖完整 DOM、CSS 或任意浏览器 API，见 [Technical Overview](https://developers.tiktok.com/docs/en/mini-games-technical-overview)。
 
-新包启动标记为 `build=host-receiver-3`，保留 `STARTUP_FAILED`、`STARTUP_WAIT` 与真实 `runtime-ready` 诊断。**当前已修复并本地复现验证的是错误接收对象绑定；fix3 的手机首帧仍待复测，不能据此宣称所有 TikTok 兼容问题已解决。** 复测时确认新标记、实际 ready 和画面；若出现新失败，继续提供完整阶段日志。
+`fix3` 启动标记为 `build=host-receiver-3`，保留 `STARTUP_FAILED`、`STARTUP_WAIT` 与真实 `runtime-ready` 诊断。**当时的通过结果仅属于本地模拟宿主；随后用户确认带有该标记的 fix3 在手机上仍报告同一 queueMicrotask 错误，已排除误用旧包。** 因此不能将接收对象重新绑定记为真实宿主修复成功，后续方案见下一节。
 
 本轮本机自动化回归 **289 项通过、0 失败、0 跳过**。新增独立 `GameGlobal` 与严格全局函数接收对象检查：旧版 helper 复现同文异常，修复后的完整转换产物完成 MessageChannel / Worker 消息往返及定时器、帧回调；原生 DOM 和方法引用保持不变。另覆盖宿主独有方法和缺失方法的回退路径。真实 Construct HTML5 输入已重新转换并通过入口语法检查；这些是本地验证，手机结果单独记录。
+
+## 2026-09-21 fix4：TikTok 使用独立 Promise 微任务队列
+
+`fix3` 的真机复测说明，将 `queueMicrotask` 绑定到可取得的全局对象仍未适配该宿主。当前没有证据确认手机中的 `globalThis` 是否为代理对象或哪个内部对象满足原生函数的类型要求；不继续把这些推测当作已经确认的宿主结构。
+
+`fix4` 对 TikTok 完全跳过原生 `queueMicrotask`，包括读取、探测和调用，改用 JavaScript Promise 队列实现引擎微任务。调度保持异步和入队顺序，调用返回 `undefined`，忽略回调返回值；非函数回调同步抛出 `TypeError`。回调异常传递到启动诊断或错误日志，后续排队任务继续执行，不留下静默的内部 Promise rejection。
+
+该调度器在构建入口创建引擎作用域时安装，早于 Worker / MessageChannel 模块求值，避免这些模块提前缓存旧的原生函数；裸 `queueMicrotask` 和 `self.queueMicrotask` 使用同一实现。`window` / `self` 仍为引擎兼容对象，原生方法保持不变，不通过读取宿主 `window` / `document` 寻找浏览器对象。
+
+新增完整包回归设置原生 `queueMicrotask` 无论接收对象是什么都抛出同文异常，并令宿主 `window` / `document` 的访问抛错。在该契约下，手写 Construct 协议夹具完成消息通道与 Worker 启动，异步顺序与返回值检查通过，原生 queue 调用次数和禁用属性读取次数均为零。这仍是本地契约测试，不是真机环境的复刻或手机通过记录。
+
+新包标记为 `build=promise-microtask-4`。**fix4 的手机首帧仍待验证。** 复测时确认新标记、实际 `runtime-ready` 与画面；若仍失败，保留 `STARTUP_FAILED` 或等待至少 15 秒后的 `STARTUP_WAIT` 完整日志，继续定位后续实际问题。
+
+本轮本机自动化回归 **294 项通过、0 失败、0 跳过**。新增微任务顺序、返回值、参数校验、异常报告和不可用原生队列的完整转换产物回归。真实 Construct HTML5 已重新转换，入口语法检查通过；这些检查不作为手机首帧验收。
 
 ## 0.2.0 历史结论
 

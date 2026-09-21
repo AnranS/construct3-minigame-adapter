@@ -34,6 +34,7 @@ export function createEngineScope(nativeHost, {platform = 'douyin', api, nativeB
   }
   for (const name of ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'queueMicrotask',
     'requestAnimationFrame', 'cancelAnimationFrame', 'atob', 'btoa', 'structuredClone']) {
+    if (platform === 'tiktok' && name === 'queueMicrotask') continue;
     const method = readNative(name);
     if (typeof method !== 'function') continue;
     // GameGlobal may expose unbound copies of the surrounding realm's methods.
@@ -45,6 +46,25 @@ export function createEngineScope(nativeHost, {platform = 'douyin', api, nativeB
   }
   for (const name of ['console', 'performance', 'crypto']) {
     if (readNative(name) !== undefined) scope[name] = readNative(name);
+  }
+  if (platform === 'tiktok') {
+    // TikTok can expose a Window method while keeping its actual receiver
+    // inaccessible, even through globalThis. Use JS Promise jobs from the start:
+    // worker.js captures this scheduler during module evaluation, before entry.
+    const resolved = Promise.resolve();
+    scope.queueMicrotask = callback => {
+      if (typeof callback !== 'function') throw new TypeError('queueMicrotask requires a function');
+      resolved.then(() => {
+        // Ignore callback return values, as the native API does. Catch here so
+        // callback errors cannot turn into invisible unhandled rejections.
+        try { callback(); }
+        catch (error) {
+          try { if (scope.__C3MiniGameStartup?.fail(error, 'microtask')) return; } catch { /* Report below. */ }
+          try { if (typeof scope.reportError === 'function') { scope.reportError(error); return; } } catch { /* Report below. */ }
+          try { scope.console?.error?.('[C3 MiniGame] Uncaught microtask error', error); } catch { /* Reporting must not stop later jobs. */ }
+        }
+      });
+    };
   }
   // TikTok Native provides TTMinis.game directly; it is not an alias for tt.
   // Keep this resolver self-contained because the compiler embeds this function.
