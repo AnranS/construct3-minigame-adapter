@@ -14,7 +14,7 @@
 
 普通浏览器没有微信 `wx` / 抖音 `tt` / TikTok `TTMinis.game` 原生宿主及转换器安装的桥接。平台 API 需要在转换后的小游戏工程中验证。
 
-如果已经在小游戏 IDE 中，检查是否导入了转换输出目录，确认 `game.js` 正常执行，再用 `supportsAPI` 或 `getCapabilities` 查看具体 API。目录外的名称、当前平台没有纳入的接口、缺少原生方法或缺少目录要求的 `off...` 时会不可用；显式登记的全量 off / 无 off 事件特例按本地停用契约处理。
+如果已经在小游戏 IDE 中，检查是否导入了转换输出目录，确认 `game.js` 正常执行，再用 `supportsAPI` 或 `getCapabilities` 查看具体 API。目录外的名称、当前平台没有纳入的接口、原生方法及显式备用方法均缺少，或缺少目录要求的 `off...` 时会不可用；显式登记的全量 off / 无 off 事件特例按本地停用契约处理。
 
 不要用模拟成功回调消除这个错误；应让界面明确提示当前功能不可用。
 
@@ -128,11 +128,11 @@ node src/cli.mjs inspect --input ./exports/my-game
 
 更新源码并重新转换 HTML5 导出。修复后的 TikTok 适配层在存在 `on...`、缺少 `off...` 时使用共享事件分发器；释放适配层会移除自己的本地回调，重复安装复用同一个原生监听，不影响其他调用方。有对应 `off...` 时仍使用原生撤销。此兼容逻辑覆盖启动过程的窗口、输入、前后台和网络监听，不会添加假的原生方法，也不扩展公开 API 目录。
 
-已通过缺失 off 接口的启动、窗口更新、释放、重装和完整打包夹具回归；修复后的 TikTok 真机首帧仍待验证。原生接口范围请分别参考 TikTok 官方 [Event](https://developers.tiktok.com/docs/en/mini-games-sdk-event) 和 [Device and Network](https://developers.tiktok.com/docs/en/mini-games-sdk-device-and-network)，不要从微信或抖音同名方法推断。
+已通过缺失 off 接口的启动、窗口更新、释放、重装和完整打包夹具回归；这些属于本地测试。后续 fix4 用户截图提供了页面显示与分类导航证据，具体边界及存储失败见下文。原生接口范围请分别参考 TikTok 官方 [Event](https://developers.tiktok.com/docs/en/mini-games-sdk-event) 和 [Device and Network](https://developers.tiktok.com/docs/en/mini-games-sdk-device-and-network)，不要从微信或抖音同名方法推断。
 
 ## TikTok 灰屏，最后只有 secure context 警告
 
-2026-09-21 的 TikTok iOS 用户反馈：`fix1` 不再出现 `offWindowResize` 异常，但游戏仍灰屏，最后一条游戏相关日志是 Construct 的 `not a secure context` 警告，Error 页为空。当时尚未确认失败位置；后续 `fix2` 的真机日志定位到 `queueMicrotask` 接收对象错误，处理方式见下一节。修复后的真机首帧仍无通过记录。
+2026-09-21 的 TikTok iOS 用户反馈：`fix1` 不再出现 `offWindowResize` 异常，但游戏仍灰屏，最后一条游戏相关日志是 Construct 的 `not a secure context` 警告，Error 页为空。当时尚未确认失败位置；后续 `fix2` 的真机日志定位到 `queueMicrotask` 接收对象错误。再后续的 `fix4` 用户截图已显示 API 页面并进入存储分类，提供了部分渲染与导航证据，同时发现存储回读失败；处理方式见下文。
 
 这条警告本身不会中止 Construct 启动。已确认的诊断缺口是：Construct 构造器发起异步初始化后立即返回，初始化 Promise 的后续错误可能绕过 `__C3MiniGameLoaded` 的入口加载错误捕获。因此 Error 页为空，仍可能有尚未暴露的初始化失败或等待。
 
@@ -156,11 +156,25 @@ node src/cli.mjs inspect --input ./exports/my-game
 
 这里的 `Window` 是底层函数的类型检查，不代表能直接使用完整网页 DOM。Construct 看到的 `window` / `self` 仍是适配层提供的兼容对象；修复没有把真实浏览器 DOM 引入小游戏。TikTok 官方对完整 DOM、CSS 和任意浏览器 API 的限制见 [Technical Overview](https://developers.tiktok.com/docs/en/mini-games-technical-overview)。
 
-请使用 `fix4`，或更新源码后重新转换原始 HTML5 导出，确认启动日志包含 `build=promise-microtask-4`。TikTok 现在完全跳过原生 `queueMicrotask`，包括读取与探测，在引擎作用域创建时就安装 Promise 微任务队列，避免 Worker / MessageChannel 提前缓存旧函数。裸调用和 `self.queueMicrotask` 均使用该队列。
+从 `fix4`（`build=promise-microtask-4`）起，TikTok 完全跳过原生 `queueMicrotask`，包括读取与探测，在引擎作用域创建时就安装 Promise 微任务队列，避免 Worker / MessageChannel 提前缓存旧函数。裸调用和 `self.queueMicrotask` 均使用该队列；最新 `fix5` 保留此修复。
 
 队列保持异步和入队顺序，返回 `undefined`，忽略回调返回值；无效回调同步抛出 `TypeError`，回调异常进入启动诊断或错误日志。原生方法不被覆盖，也不会通过宿主 `window` / `document` 获取真实 DOM。完整包测试已覆盖“原生 queue 始终抛错、window/document 访问也抛错”的契约，消息通道与 Worker 可以完成启动。
 
-**fix4 的手机首帧仍待验证。** 若依旧灰屏，等待至少 15 秒并提供新的 `STARTUP_FAILED` 或 `STARTUP_WAIT` 完整日志；本地测试通过或旧异常消失都不能代替手机实际 ready、画面和输入验收。
+**fix4 的后续用户真机截图已显示 57 入口 API 页面，并进入本地存储分类。** 该证据只覆盖已显示页面与分类操作，不能外推全部 API 通过。若其他环境依旧灰屏，等待至少 15 秒并提供新的 `STARTUP_FAILED` 或 `STARTUP_WAIT` 完整日志。
+
+## TikTok 写入存储后读回不一致
+
+用户在 `fix4` 的“本地存储 · localStorage 映射”页报告此问题。旧适配层会先查询 `getStorageInfoSync().keys`，键不在列表中就直接返回 `null`。本地已复现“原生读写正常、枚举没有新键”时产生错误回读；但尚未取得用户手机的原始返回值，不能把宿主枚举滞后写成已经确认的根因。
+
+请换用 `fix5`，或更新源码重新转换，确认日志标记为 `build=storage-device-5`。TikTok localStorage 和 `runtime.storage` 现在直接点读 `getStorageSync`，不再由枚举列表决定能否读取；项目存储 `ready()` 不再要求 SDK 0.8.0 起提供的 `getStorageInfoSync`。localStorage 保留合法空字符串，`null` / `undefined` 返回缺失；项目存储的值始终采用非空封装，原生空字符串也表示缺失。
+
+键枚举、数量及清空操作仍依赖真实原生枚举，缺少接口或失败会明确报错。适配层没有缓存写入值来制造读回成功。请分别复测写入、读取、删除和重启后的读取；这些手机功能尚待确认。若失败，保留错误与版本信息，避免公开存储内容或个人凭据。
+
+## TikTok getDeviceInfo 被判为不支持
+
+旧版 TikTok 目录未登记 `getDeviceInfo`，因此即便宿主提供该函数，桥接仍可能返回 `UNSUPPORTED`。`fix5` 已加入同步入口：优先调用 `TTMinis.game.getDeviceInfo`；仅当它缺失或不是函数时，使用同平台官方 `TTMinis.game.getSystemInfoSync` 兼容映射。两者至少有一个可调用方法时，`supportsAPI("getDeviceInfo")` 返回 true，通过 `getAPISync("getDeviceInfo")` 读取实际原生结果。
+
+`getDeviceInfo` 目前未列在官方 [System 文档](https://developers.tiktok.com/docs/en/mini-games-sdk-system) 中，因此映射会明确公开：`getCapabilities()` 中该项的 `nativeMethod` 表示实际选择的方法，`compatibilityFallback` 表示是否使用兼容路径；查询能力不执行原生 API。返回原生对象原样，不添加缺失字段或伪造设备信息。原生 `getDeviceInfo` 自身抛错时保留失败，不转去调用系统信息；两个方法都不存在时才报告 `UNSUPPORTED`。新包手机设备读数仍待复测。
 
 ## TikTok 检测不到宿主或支付没有发货
 
@@ -168,4 +182,4 @@ node src/cli.mjs inspect --input ./exports/my-game
 
 同名 API 也需要看目录中 TikTok 的独立契约。当前未登记的顶层方法不会自动透传；文件管理器、音频或 SocketTask 上的方法需要在返回对象上调用。
 
-支付的客户端 success / complete 不代表订单已确认或已发货。检查自己的服务器是否收到 Webhook、使用原始请求体验签、验证商户和环境、幂等更新订单，再检查客户端查询的是自己的已鉴权订单接口。轮询超时保持 pending，不自动认定失败或再次扣款；用户取消或失败后重新购买需创建新订单。见 [TikTok 支付接入](../tiktok-iap/)。本项目尚无 TikTok IDE、真机或真实支付的通过记录；已有 TikTok iOS 用户真机启动失败报告，见上面的启动排查记录。
+支付的客户端 success / complete 不代表订单已确认或已发货。检查自己的服务器是否收到 Webhook、使用原始请求体验签、验证商户和环境、幂等更新订单，再检查客户端查询的是自己的已鉴权订单接口。轮询超时保持 pending，不自动认定失败或再次扣款；用户取消或失败后重新购买需创建新订单。见 [TikTok 支付接入](../tiktok-iap/)。本项目已有 TikTok iOS 用户截图提供页面显示与分类导航证据，也有启动及存储失败记录；尚无 TikTok IDE、真机完整功能或真实支付的验收记录。

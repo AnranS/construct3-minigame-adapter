@@ -4,7 +4,7 @@
 
 ## 0.3.0 当前验证
 
-0.3.0 已在真实 Construct r495.2 编辑器重新完成 HTML5 导出，并从同一份原始导出成功转换微信、抖音、TikTok 三个平台。本轮微信 IDE 已验证启动、渲染与分类/返回导航；尚未运行新版 17 项自检或点击支付测试入口。没有抖音 / TikTok IDE、三端真机或真实支付的通过记录；已有 TikTok iOS 用户真机启动失败反馈，详见后文。
+0.3.0 已在真实 Construct r495.2 编辑器重新完成 HTML5 导出，并从同一份原始导出成功转换微信、抖音、TikTok 三个平台。本轮微信 IDE 已验证启动、渲染与分类/返回导航；尚未运行新版 17 项自检或点击支付测试入口。TikTok iOS 用户后续截图已提供 API 页面显示和进入本地存储分类的证据，同时报告存储回读失败。抖音 / TikTok IDE、三端真机完整功能与真实支付尚未验收，详见后文。
 
 | 层级 | 当前结果 | 范围 |
 | --- | --- | --- |
@@ -16,7 +16,8 @@
 | 当前示例内容 | 微信 / 抖音 53 入口、12 类；TikTok 57 入口、13 类 | 支付入口只检测能力和说明流程，不执行真实支付 |
 | 微信 IDE 0.3.0 | 启动、渲染与导航通过 | RC 2.02.2607161 / 基础库 3.15.3，iPhone 12/13 Pro 模拟器；WebGL2、runtime-ready、53 个入口，基础信息分类打开及返回成功。新启动 0 error、2 warning |
 | 抖音 / TikTok IDE | 未验收 | 构建通过不代表 IDE 首帧或平台 API 已运行 |
-| 真机 / 真实支付 | 未验收通过 | 已有 TikTok iOS 真机启动失败反馈；尚无三端真机或真实交易通过记录 |
+| TikTok iOS 真机 | 用户截图提供部分显示与导航证据 | fix4 页面显示 57 个入口，已进入本地存储分类；写入回读失败，不能外推其他 API 已通过 |
+| 真机完整功能 / 真实支付 | 尚未验收 | 保留此前 TikTok iOS 启动失败反馈；没有三端真机完整功能或真实交易通过记录 |
 
 `.c3p` 的 `properties.version` 已修正为 `0.3.0.0`，`usedAddons` 中 MiniGameBridge 仍为 `0.3.0.0`；该次修正仅改变项目版本元数据，其他 24 个 ZIP 条目逐字节保持不变，没有修改真实 HTML5 导出内容。原始 ZIP SHA-256 为 `9a00976f65288906b02716175019f5d5c09f3bcff257ec940b34ea44bdbf3f66`，项目脚本 SHA-256 为 `4a215fb1ed3a77c7a2ebc67511735f2111086ca11225037673c7954fd8922c9c`。三端入口与项目文件哈希见 [导出证据](EXPORT-EVIDENCE.json) 中 `releases["0.3.0"]`。
 
@@ -68,9 +69,25 @@
 
 新增完整包回归设置原生 `queueMicrotask` 无论接收对象是什么都抛出同文异常，并令宿主 `window` / `document` 的访问抛错。在该契约下，手写 Construct 协议夹具完成消息通道与 Worker 启动，异步顺序与返回值检查通过，原生 queue 调用次数和禁用属性读取次数均为零。这仍是本地契约测试，不是真机环境的复刻或手机通过记录。
 
-新包标记为 `build=promise-microtask-4`。**fix4 的手机首帧仍待验证。** 复测时确认新标记、实际 `runtime-ready` 与画面；若仍失败，保留 `STARTUP_FAILED` 或等待至少 15 秒后的 `STARTUP_WAIT` 完整日志，继续定位后续实际问题。
+该包标记为 `build=promise-microtask-4`，交付时手机首帧尚待复测。**后续用户真机截图已显示 TikTok 的 57 入口 API 页面，并进入本地存储分类。** 这是部分渲染与导航证据，不代表所有入口、平台 API 或后续运行均已通过；同次反馈的存储失败见下一节。
 
 本轮本机自动化回归 **294 项通过、0 失败、0 跳过**。新增微任务顺序、返回值、参数校验、异常报告和不可用原生队列的完整转换产物回归。真实 Construct HTML5 已重新转换，入口语法检查通过；这些检查不作为手机首帧验收。
+
+## 2026-09-21 fix5：TikTok 存储读取与设备信息登记
+
+用户真机截图显示 API 页面已能渲染并进入“本地存储 · localStorage 映射”，点击写入后提示“写入后读回的数据不一致”；另反馈 `tiktok.getDeviceInfo` 被判为不支持。
+
+本地已复现一项存储适配缺陷：旧实现先用 `getStorageInfoSync().keys` 判断键是否存在，当枚举遗漏新键时，会直接返回 `null`，即使原生 `getStorageSync` 本可读到已持久化的数据。该问题同时影响 localStorage 与 Construct `runtime.storage`。**这是已复现的适配层缺陷；手机上实际的 keys 和原始读取返回值尚未取得，不能断言真机就是枚举滞后。**
+
+`fix5` 的 TikTok 点读直接调用 `getStorageSync`，不再由枚举结果拦截。项目存储的 `ready()` 也不再要求 SDK 0.8.0 起提供的枚举接口。`null` / `undefined` 作为缺失值；localStorage 保留合法空字符串；项目存储使用非空版本化封装，因此原生空字符串按缺失处理。需要枚举的 `keys`、`key`、`length`、`clear` 仍读取原生键列表，缺少接口或原生失败会明确暴露。没有缓存写入值来替代真实读取，也没有把持久化失败改报成功。
+
+设备信息方面，TikTok 目录原先漏掉 `getDeviceInfo`，即使宿主确实提供函数也会被桥接拒绝。现增加同步入口和明确的同平台兼容映射：优先调用 `TTMinis.game.getDeviceInfo`；仅当其缺失或不是函数时，改用官方 `TTMinis.game.getSystemInfoSync`。实际方法的接收对象、参数和返回值原样保留，不补造设备字段；原生 `getDeviceInfo` 抛错时保留失败，不再调用替代方法，两者都缺失才报告 `UNSUPPORTED`。
+
+当前官方 [System 文档](https://developers.tiktok.com/docs/en/mini-games-sdk-system) 未列 `getDeviceInfo`，因此不宣称它是所有 SDK 都提供的原生接口。目录使用 `documentation: "native-or-system-info-mapping"` 与 `syncFallback: "getSystemInfoSync"` 明确记录映射；该能力的 `getCapabilities()` 项公开 `nativeMethod` 和 `compatibilityFallback`，告知实际选择的方法及是否启用兼容映射。能力探测本身不执行这些 API。TikTok 目录由 59 增至 60 个名称，全局唯一名称仍为 194 个。
+
+本轮本机自动化回归 **318 项通过、0 失败、0 跳过**。新增存储检查覆盖缺失、滞后和抛错的枚举接口、原生持久化跨实例读取、中文与空字符串、命名空间隔离和原生读写错误；设备信息检查覆盖原生优先、明确兼容映射、实际方法元数据、调用失败及平台隔离。打包夹具还验证生成入口向 Construct 子存储传递 TikTok 平台，以及包内桥接的两条设备信息路径。原来的真实 Construct HTML5 导出重新转换成功。
+
+新包标记为 `build=storage-device-5`。**手机上的存储写入、读取、删除、重启持久化及设备读数仍待复测。** 已有的页面显示证据仅适用于用户提供的 fix4 运行截图，不替代 fix5 的功能验收。
 
 ## 0.2.0 历史结论
 

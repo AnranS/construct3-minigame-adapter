@@ -2,7 +2,7 @@
 
 适配层登记了 **{{API_COUNT}} 个唯一 API 名称、{{CATEGORY_COUNT}} 类能力**：微信目录 {{WECHAT_COUNT}} 个、抖音 {{DOUYIN_COUNT}} 个、TikTok {{TIKTOK_COUNT}} 个。下方目录直接从运行时代码生成，同名接口会合并展示，调用种类和平台差异仍保留。
 
-**目录覆盖不等于目标环境可用，更不等于全部实测通过。** 基础库版本、运行域、用户授权和业务配置都会影响调用。先用 `supportsAPI()` 或 `getCapabilities()` 检查当前宿主，再处理真实返回结果。能力检查只检查目录及原生方法是否存在，不登录、不申请权限、不拉起分享，也不会发送网络请求。当前支付入口按平台独立登记；客户端回调不能替代服务端订单确认。
+**目录覆盖不等于目标环境可用，更不等于全部实测通过。** 基础库版本、运行域、用户授权和业务配置都会影响调用。先用 `supportsAPI()` 或 `getCapabilities()` 检查当前宿主，再处理真实返回结果。能力检查只检查目录及原生方法或显式备用方法是否存在，不登录、不申请权限、不拉起分享，也不会发送网络请求。当前支付入口按平台独立登记；客户端回调不能替代服务端订单确认。
 
 ## 六个通用接口
 
@@ -13,9 +13,11 @@
 | `createAPIObject(name, options)` | `object` | 返回原生对象本身，不把句柄序列化成 JSON |
 | `onAPIEvent(name, callback)` | `event` | 返回取消订阅函数，重复取消安全 |
 | `supportsAPI(name)` | 全部 | 当前宿主是否提供该目录项所需方法 |
-| `getCapabilities()` | 全部 | 当前目录的能力记录，含 `name`、`kind`、`category`、`platform`、`supported` 及不可用时的 `reason` |
+| `getCapabilities()` | 全部 | 当前目录的能力记录，含 `name`、`kind`、`category`、`platform`、`supported` 及不可用时的 `reason`；登记兼容映射的项另含 `nativeMethod`、`compatibilityFallback` |
 
-接口只接受目录中的精确名称。缺少方法会报告 `UNSUPPORTED`，用错调用种类会报告 `WRONG_API_KIND`。例如 `connectSocket` 属于对象入口，应使用 `createAPIObject()`，然后等待真实 `onOpen`。
+接口只接受目录中的精确名称。原生方法及目录显式登记的备用方法均不可用时报告 `UNSUPPORTED`，用错调用种类会报告 `WRONG_API_KIND`。例如 `connectSocket` 属于对象入口，应使用 `createAPIObject()`，然后等待真实 `onOpen`。
+
+TikTok 的 `getDeviceInfo` 优先同步调用原生同名方法；仅在该方法缺失或不是函数时映射官方 `getSystemInfoSync`，原样返回真实结果，不补造字段。`getCapabilities()` 公开所选 `nativeMethod` 及是否使用 `compatibilityFallback`，查询时不执行原生方法。原生 `getDeviceInfo` 抛错时保留失败，不改走备用方法；此映射不影响微信或抖音。
 
 在 Construct 脚本中，先取得插件实例并完成初始化：
 
@@ -102,7 +104,7 @@ audio.play();
 
 ## 如何理解验证结果
 
-0.3.0 已完成真实 Construct r495.2 重新导出和三端转换，本机回归 255 项通过、0 项失败。本轮微信 IDE 已验证启动、53 个入口和分类/返回导航，未运行新版自检或点击支付测试入口；TikTok IDE、真机及真实支付尚未验证。
+0.3.0 已完成真实 Construct r495.2 重新导出和三端转换，发布基线为本机回归 255 项通过、0 项失败。微信 IDE 已验证启动、53 个入口和分类/返回导航，未运行新版自检或点击支付测试入口。后续 TikTok iOS 用户 fix4 截图显示 57 入口页面并进入存储分类，同时报告回读失败；这只提供部分渲染与导航证据。fix5 本地回归 318 项通过、0 项失败、0 项跳过，手机存储与设备读数仍待复测，详见 [验证记录](../validation/)。
 
 0.2.0 运行时基线有 **213 项自动化回归通过**，其中许多使用受控原生 API 夹具验证成功、失败、取消及资源清理。真实微信 IDE 的 17 项常用自检全部通过，并验证了部分界面、键盘和音频交互。该历史微信宿主探测到 133 / 171 项可用方法；这个数字不是成功调用数。
 

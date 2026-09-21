@@ -155,9 +155,17 @@ export function createPlatformAPI({api, platform = 'douyin', defaultTimeoutMs = 
   const subscriptions = new Set();
   let disposed = false;
   const error = (code, name, cause) => new PlatformAPIError(code, name, platform, cause);
+  const nativeMethodFor = entry => {
+    if (!entry || disposed) return null;
+    if (typeof api[entry.name] === 'function') return entry.name;
+    // Only explicitly catalogued synchronous mappings may select an alternative.
+    // Never retry a failed native call or infer aliases across platforms.
+    if (entry.kind === 'sync' && entry.syncFallback && typeof api[entry.syncFallback] === 'function') return entry.syncFallback;
+    return null;
+  };
   const reasonFor = entry => {
     if (disposed) return 'DISPOSED';
-    if (!entry || typeof api[entry.name] !== 'function') return 'UNSUPPORTED';
+    if (!nativeMethodFor(entry)) return 'UNSUPPORTED';
     if (entry.kind === 'event' && !usesLocalUnsubscribe(entry) && typeof api[entry.off] !== 'function') return 'UNSUPPORTED';
     return null;
   };
@@ -262,8 +270,8 @@ export function createPlatformAPI({api, platform = 'douyin', defaultTimeoutMs = 
   return {
     callAPI,
     getAPISync(name, ...args) {
-      lookup(name, 'sync');
-      try { return api[name].apply(api, args); } catch (cause) { throw error('PLATFORM_ERROR', name, cause); }
+      const entry = lookup(name, 'sync');
+      try { return api[nativeMethodFor(entry)].apply(api, args); } catch (cause) { throw error('PLATFORM_ERROR', name, cause); }
     },
     createAPIObject(name, options = {}) {
       const entry = lookup(name, 'object'); objectArgument(options, name, platform);
@@ -309,7 +317,9 @@ export function createPlatformAPI({api, platform = 'douyin', defaultTimeoutMs = 
       return [...new Set(directory.map(item => item.name))].map(name => {
         const entry = entries.get(name) || directory.find(item => item.name === name);
         const reason = reasonFor(entries.get(name));
+        const nativeMethod = entry.syncFallback ? nativeMethodFor(entries.get(name)) : null;
         return {name, kind: entry.kind, category: entry.category, platform, supported: !reason, ...(reason ? {reason} : {}),
+          ...(entry.syncFallback ? {nativeMethod, compatibilityFallback: nativeMethod === entry.syncFallback} : {}),
           ...(entry.completion ? {completion: entry.completion} : {}),
           ...(entry.kind === 'event' ? {unsubscribe: usesLocalUnsubscribe(entry) ? 'local' : 'native'} : {}),
           ...(entry.executionScope ? {executionScope: entry.executionScope} : {}),

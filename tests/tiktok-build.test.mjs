@@ -276,6 +276,24 @@ test(`TikTok Native package executes lexical TTMinis.game bindings without wx/tt
   assert.notEqual(scope.__fixtureProbeCanvas, f.canvases[0]);
   assert.equal(scope.__fixtureRuntime.workerValue, 42);
   assert.deepEqual(errors, []);
+  // Inventory can lag behind successful point reads. This also verifies that
+  // the generated entry propagates TikTok semantics to Construct child stores.
+  f.api.getStorageInfoSync = () => ({keys: []});
+  scope.localStorage.setItem('包内存储测试', '中文数据');
+  assert.equal(scope.localStorage.getItem('包内存储测试'), '中文数据');
+  const projectStore = scope.__C3MiniGameStorage.createInstance({name: 'fixture-project'});
+  await projectStore.ready();
+  await projectStore.setItem('score', 42);
+  assert.equal(await projectStore.getItem('score'), 42);
+  assert.equal(await scope.__C3MiniGameStorage.createInstance({name: 'fixture-project'}).getItem('score'), 42);
+  const deviceInfo = Object.freeze({platform: 'ios', model: 'native fixture'});
+  f.api.getSystemInfoSync = function () { assert.equal(this, f.api); return deviceInfo; };
+  assert.equal(scope.C3MiniGameBridge.supportsAPI('getDeviceInfo'), true);
+  assert.equal(scope.C3MiniGameBridge.getAPISync('getDeviceInfo'), deviceInfo);
+  assert.equal(scope.C3MiniGameBridge.getCapabilities().find(item => item.name === 'getDeviceInfo').nativeMethod, 'getSystemInfoSync');
+  f.api.getDeviceInfo = function () { assert.equal(this, f.api); return deviceInfo; };
+  assert.equal(scope.C3MiniGameBridge.supportsAPI('getDeviceInfo'), true);
+  assert.equal(scope.C3MiniGameBridge.getAPISync('getDeviceInfo'), deviceInfo);
   await context.__C3MiniGameAdapter.dispose();
 });
 }

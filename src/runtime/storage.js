@@ -81,12 +81,13 @@ function noCallback(callback) {
 }
 
 /**
- * Optional localforage-shaped store backed by actual wx/tt storage APIs.
+ * Optional localforage-shaped store backed by actual platform storage APIs.
  * Never fabricates IndexedDB and never silently replaces failed persistence with memory.
  * Supported values: JSON-like data, Date, ArrayBuffer, DataView and standard typed arrays.
  * Functions, symbols, cycles, Map/Set and Blob are rejected rather than silently corrupted.
  */
-export function createPlatformStorage({api, name = 'localforage', storeName = 'keyvaluepairs', namespace = 'c3-native-storage', forceInMemoryFallback = false} = {}) {
+export function createPlatformStorage({api, platform = 'wechat', name = 'localforage', storeName = 'keyvaluepairs', namespace = 'c3-native-storage', forceInMemoryFallback = false} = {}) {
+  if (!['wechat', 'douyin', 'tiktok'].includes(platform)) throw new Error(`Unsupported storage platform: ${platform}`);
   if (typeof name !== 'string' || !name || typeof storeName !== 'string' || !storeName || typeof namespace !== 'string' || !namespace) throw new TypeError('Storage namespace, name and storeName must be non-empty strings');
   const prefix = `${encodeURIComponent(namespace)}:${encodeURIComponent(name)}:${encodeURIComponent(storeName)}:`;
   let memory = new Map();
@@ -100,8 +101,8 @@ export function createPlatformStorage({api, name = 'localforage', storeName = 'k
     async ready(callback) {
       noCallback(callback);
       if (!isMemory) {
-        for (const method of ['getStorageInfoSync', 'getStorageSync', 'setStorageSync', 'removeStorageSync']) requireMethod(api, method);
-        nativeKeys();
+        for (const method of ['getStorageSync', 'setStorageSync', 'removeStorageSync']) requireMethod(api, method);
+        if (platform !== 'tiktok') nativeKeys();
       }
       return true;
     },
@@ -109,8 +110,11 @@ export function createPlatformStorage({api, name = 'localforage', storeName = 'k
       noCallback(callback); keyString(key);
       if (isMemory) return memory.has(key) ? clone(memory.get(key)) : null;
       const nativeKey = prefix + encodeURIComponent(key);
-      if (!nativeKeys().includes(nativeKey)) return null;
+      if (platform !== 'tiktok' && !nativeKeys().includes(nativeKey)) return null;
       const payload = requireMethod(api, 'getStorageSync')(nativeKey);
+      // Every value written by this store is a non-empty versioned envelope.
+      // A null/undefined/empty native result therefore represents a missing key.
+      if (platform === 'tiktok' && (payload == null || payload === '')) return null;
       if (typeof payload !== 'string') throw new Error('Native storage payload has an unexpected format');
       const envelope = JSON.parse(payload);
       if (envelope?.version !== 1) throw new Error('Unsupported native storage version');
@@ -150,7 +154,7 @@ export function createPlatformStorage({api, name = 'localforage', storeName = 'k
       }
     },
     createInstance(options = {}) {
-      return createPlatformStorage({api, namespace, name, storeName, ...options});
+      return createPlatformStorage({api, platform, namespace, name, storeName, ...options});
     },
     IsInMemory() { return isMemory; },
     GetMemoryStorage() { if (!isMemory) throw new Error('This store uses native persistence'); return memory; },

@@ -6,7 +6,7 @@
 
 **0.3.0 已接入三个独立宿主：`wx`、`tt`、`TTMinis.game`，并提供支付调用、后端订单轮询和服务器 Webhook 验签辅助。** 当前目录有 194 个 API 名称、21 类能力；调用契约与平台差异见 [API 目录](https://anrans.github.io/construct3-minigame-adapter/api/)。TikTok 使用原生 runtime，无需 SDK init，也不会映射到抖音 `tt`。
 
-本轮已通过真实 Construct r495.2 重新导出并完成三端转换。微信 IDE 已观察到 WebGL2、runtime-ready、53 个功能入口及分类/返回导航，新启动为 0 error、2 warning。**新版自检与支付入口尚未实测；抖音 / TikTok IDE、三端真机和真实支付尚未验收。** 微信 IDE 的 Modal 历史 Worker 错误仍未解决，本轮尚未复测；分项结果和历史基线见 [验证记录](docs/VALIDATION.md)，排查见 [在线指南](https://anrans.github.io/construct3-minigame-adapter/troubleshooting/)。
+本轮已通过真实 Construct r495.2 重新导出并完成三端转换。微信 IDE 已观察到 WebGL2、runtime-ready、53 个功能入口及分类/返回导航，新启动为 0 error、2 warning。TikTok iOS 用户截图已显示 57 个入口并进入存储分类，同时报告存储回读失败；fix5 的存储与设备信息修复仍待手机复测。**新版自检与支付入口尚未实测；抖音 / TikTok IDE、三端真机完整功能和真实支付尚未验收。** 微信 IDE 的 Modal 历史 Worker 错误仍未解决，本轮尚未复测；分项结果和历史基线见 [验证记录](docs/VALIDATION.md)，排查见 [在线指南](https://anrans.github.io/construct3-minigame-adapter/troubleshooting/)。
 
 公开仓库提供源码、插件、原创测试夹具及 `.c3p` 示例，**不分发 Construct 引擎的 HTML5 导出或其小游戏构建产物**。克隆后请用 Construct 打开 `MiniGameApiSuite.c3p`、自行导出 HTML5，再运行转换器；完整步骤见下文或[快速开始](https://anrans.github.io/construct3-minigame-adapter/guide/)。本机原始导出与历史证据仍保留。
 
@@ -84,7 +84,7 @@ try {
 
 如果重命名了项目中的对象，需要相应修改 `runtime.objects` 下的名称。JavaScript 方法也触发事件条件，但失败会 reject，调用方须捕获。更多方法和适配层接口见 [插件说明](addon/README.md)。
 
-通用 JavaScript 接口为 `callAPI(name, options, control)`、`getAPISync(name, ...args)`、`createAPIObject(name, options)`、`onAPIEvent(name, callback)`、`supportsAPI(name)` 和 `getCapabilities()`。它们只接受目录中的名称；原生方法缺失时报 `UNSUPPORTED`，调用种类错误时报 `WRONG_API_KIND`。原生对象由调用方按平台文档 `close` / `destroy` 并移除对象上的监听。`onAPIEvent` 返回幂等的取消订阅函数；插件释放时只清理自己的订阅。
+通用 JavaScript 接口为 `callAPI(name, options, control)`、`getAPISync(name, ...args)`、`createAPIObject(name, options)`、`onAPIEvent(name, callback)`、`supportsAPI(name)` 和 `getCapabilities()`。它们只接受目录中的名称；原生方法及目录显式登记的备用方法均不可用时报 `UNSUPPORTED`，调用种类错误时报 `WRONG_API_KIND`。原生对象由调用方按平台文档 `close` / `destroy` 并移除对象上的监听。`onAPIEvent` 返回幂等的取消订阅函数；插件释放时只清理自己的订阅。
 
 普通异步 API 默认等待最多 30 秒，Modal、授权、扫码、选图等交互 API 默认不设置超时；JavaScript 可显式传 `control.timeoutMs`。取消等待仅在原生任务提供 `abort()` 时同时取消任务，不能据此认为平台弹窗已经关闭。微信 `shareAppMessage` 是无完成回调的同步调用，返回不代表分享成功；抖音同名接口按原生回调处理。详见 [调用语义与完整目录](docs/API-COVERAGE.md)。
 
@@ -178,7 +178,7 @@ node src/cli.mjs convert \
 
 支付使用现有 Call API / `callAPI("pay", {trade_order_id})`，或运行时辅助 `globalThis.C3MiniGameBridge.pay()`；后者成功仅返回 `clientStatus: "completed"`、`fulfillment: "unconfirmed"`。自己的后端需要创建订单、处理 Webhook 验签与幂等发货，客户端只查询自己的已鉴权订单接口。轮询超时保持 pending，取消/失败后的新购买需重新创建订单。详见 [TikTok IAP 接入](docs/TIKTOK-IAP.md)。
 
-`src/runtime/payment.js` 提供 `pollPaymentOrder`，`src/server/tiktok-webhook.mjs` 提供服务器验签辅助；本项目没有订单数据库或自动发货服务。TikTok IDE、真机和真实支付均未验证。微信两个支付接口也按其原生参数调用，不能复用 TikTok 订单参数。
+`src/runtime/payment.js` 提供 `pollPaymentOrder`，`src/server/tiktok-webhook.mjs` 提供服务器验签辅助；本项目没有订单数据库或自动发货服务。TikTok 已有用户截图提供页面显示与分类导航证据；TikTok IDE、真机完整功能和真实支付仍待验收。微信两个支付接口也按其原生参数调用，不能复用 TikTok 订单参数。
 
 ## 当前兼容边界
 
@@ -208,7 +208,7 @@ npm run verify       # 自动化测试、插件打包与冒烟工程构建
 
 将冒烟工程导入对应小游戏 IDE，可单独检查适配层和原生 API。它们是手写最小示例，不能替代真实 Construct 导出验证。`npm run build` 打包插件并重建三个平台的冒烟目录；macOS 可双击 `运行验证.command` 执行测试与构建。真实 Construct 导出使用 `dist/construct-wechat` / `dist/construct-douyin` / `dist/construct-tiktok`；自己的游戏可使用前文的 `dist/my-game-wechat` 等独立目录。
 
-0.3.0 当前本地回归为 **255 项通过、0 项失败**，真实 HTML5 导出已完成三端转换。公开 CI 缺少本地引擎文件时会明确跳过该附加检查，结果以 GitHub Actions 为准；当前微信 IDE 已验证启动、渲染和分类/返回导航，未运行新版 17 项自检或点击支付测试入口；不沿用历史版本结果。
+0.3.0 发布基线为 **255 项通过、0 项失败**，真实 HTML5 导出已完成三端转换。2026-09-21 的 fix5 本地回归为 **318 项通过、0 项失败、0 项跳过**，真实 Construct 导出重新转换和语法检查通过；手机存储与设备读数仍待复测，详见 [验证记录](docs/VALIDATION.md)。公开 CI 缺少本地引擎文件时会明确跳过该附加检查，结果以 GitHub Actions 为准；当前微信 IDE 已验证启动、渲染和分类/返回导航，未运行新版 17 项自检或点击支付测试入口；不沿用历史版本结果。
 
 原生存储补丁另有原创协议夹具，公开 CI 可执行该路径的回归。依赖本地真实 Construct 引擎文件的测试在文件缺失时明确跳过；这不是引擎验证通过，也不影响保留的 0.2.0 实测记录。该项附加检查读取 `examples/construct/html5/scripts/c3runtime.js`；需要时，可将历史基线 `MiniGameBridgeTest.c3p` 的本地 HTML5 导出解压到 `examples/construct/html5/`。
 

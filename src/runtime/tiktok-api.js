@@ -15,6 +15,14 @@ function add(category, kind, names, page, extra = {}) {
 }
 add('system', 'sync', 'canIUse', 'basic-utility');
 add('system', 'sync', 'getSystemInfoSync getWindowInfo', 'system');
+// User-requested read-only native extension (checked 2026-09-21). The linked
+// System reference currently lists getSystemInfoSync/getSystemInfo/getWindowInfo,
+// not getDeviceInfo. Prefer the native extension when present, otherwise expose
+// the actual result of the documented same-platform system-info API. Capabilities
+// report the chosen method; this mapping does not manufacture missing fields.
+add('system', 'sync', 'getDeviceInfo', 'system', {
+  documentation: 'native-or-system-info-mapping', syncFallback: 'getSystemInfoSync'
+});
 add('system', 'async', 'getSystemInfo', 'system');
 add('system', 'sync', 'getLaunchOptionsSync getEnterOptionsSync', 'event');
 add('system', 'object', 'getUpdateManager', 'https://developers.tiktok.com/docs/en/mini-games-update-management', {noOptions: true});

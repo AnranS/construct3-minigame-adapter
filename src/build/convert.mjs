@@ -160,7 +160,7 @@ globalThis.__C3MiniGameStartup = startup;
 __c3NativeHost.__C3MiniGameStartup = startup;
 const disposeAdapter = adapter.dispose.bind(adapter);
 adapter.dispose = () => { startup.dispose(); readiness.dispose(); return disposeAdapter(); };
-globalThis.__C3MiniGameStorage = createPlatformStorage({api: adapter.api});
+globalThis.__C3MiniGameStorage = createPlatformStorage({api: adapter.api, platform: adapter.platform});
 const workerCompat = createWorkerCompatibility(workers, { baseURL, globals: { fetch: globalThis.fetch, navigator: globalThis.navigator, console: globalThis.console }, onError: error => { if (!startup.fail(error, 'worker')) console.error('[C3 MiniGame] Worker error:', error); } });
 globalThis.Worker = workerCompat.Worker;
 globalThis.MessageChannel = workerCompat.MessageChannel;

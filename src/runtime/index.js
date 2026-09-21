@@ -323,8 +323,11 @@ export function installAdapter({platform = 'douyin', host = globalThis, api = pl
     key(index) { return storageKeys()[index]?.slice(storagePrefix.length) ?? null; },
     getItem(key) {
       const fullKey = storagePrefix + String(key);
-      if (!storageKeys().includes(fullKey)) return null;
-      return String(requireMethod(api, 'getStorageSync')(fullKey));
+      // TikTok point reads must not depend on the separate storage inventory:
+      // an omitted key must not prevent us from reading its persisted value.
+      if (platform !== 'tiktok' && !storageKeys().includes(fullKey)) return null;
+      const value = requireMethod(api, 'getStorageSync')(fullKey);
+      return platform === 'tiktok' && value == null ? null : String(value);
     },
     setItem(key, value) { requireMethod(api, 'setStorageSync')(storagePrefix + String(key), String(value)); },
     removeItem(key) { requireMethod(api, 'removeStorageSync')(storagePrefix + String(key)); },

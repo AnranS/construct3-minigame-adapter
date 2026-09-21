@@ -1,8 +1,8 @@
 # API 覆盖与调用约定
 
-本说明对应 0.3.0 的 [platform-api.js](../src/runtime/platform-api.js)、[TikTok 独立目录](../src/runtime/tiktok-api.js)和 [bridge.js](../src/runtime/bridge.js)。目录包含 **194 个唯一 API 名称、21 类能力**；微信纳入 153 个名称，抖音 140 个，TikTok 59 个。同名接口按平台保留独立调用契约。
+本说明对应 0.3.0 的 [platform-api.js](../src/runtime/platform-api.js)、[TikTok 独立目录](../src/runtime/tiktok-api.js)和 [bridge.js](../src/runtime/bridge.js)。目录包含 **194 个唯一 API 名称、21 类能力**；微信纳入 153 个名称，抖音 140 个，TikTok 60 个。同名接口按平台保留独立调用契约。
 
-这里的“纳入目录”表示适配层允许按指定原生协议调用，不表示每个基础库都支持，也不表示接口已获授权、广告有填充、网络域名已配置或业务执行成功。`supported` 只检查当前平台的目录项和原生函数是否存在；普通事件还要求对应 `off...` 存在；目录显式登记的全量 off / 无 off 特例只停用本订阅回调。能力查询不调用业务 API，不登录、不申请权限、不发起分享、请求或支付。新增支付接口按平台独立登记，客户端回调不表示已付款或已发货，详见 [TikTok IAP](TIKTOK-IAP.md)。
+这里的“纳入目录”表示适配层允许按指定原生协议调用，不表示每个基础库都支持，也不表示接口已获授权、广告有填充、网络域名已配置或业务执行成功。`supported` 检查当前平台的目录项和实际可调用的原生方法；显式登记的同步兼容映射允许选择同平台的备用方法，并公开选择结果。普通事件还要求对应 `off...` 存在；目录显式登记的全量 off / 无 off 特例只停用本订阅回调。能力查询不调用业务 API，不登录、不申请权限、不发起分享、请求或支付。新增支付接口按平台独立登记，客户端回调不表示已付款或已发货，详见 [TikTok IAP](TIKTOK-IAP.md)。
 
 ## 6 个通用接口
 
@@ -12,10 +12,10 @@
 | `getAPISync(name, ...args)` | 调用 `sync` 接口并立即返回原值；位置参数和原生接收者保持不变。sync 表示同步，**不表示只读** |
 | `createAPIObject(name, options = {})` | 调用 `object` 工厂或管理器入口，返回原生对象本身；不包装成 JSON、不修改对象身份 |
 | `onAPIEvent(name, callback)` | 订阅 `event`，返回幂等的取消订阅函数；保留回调的全部参数、原生 `this` 和返回值 |
-| `supportsAPI(name)` | 返回当前环境的方法是否可用；未知名称或缺少原生方法返回 false |
-| `getCapabilities()` | 返回目录数组，每项含 `name`、`kind`、`category`、`platform`、`supported`；不可用时含 `reason` |
+| `supportsAPI(name)` | 返回当前环境的方法是否可用；未知名称或缺少原生方法及显式备用方法时返回 false |
+| `getCapabilities()` | 返回目录数组，每项含 `name`、`kind`、`category`、`platform`、`supported`；不可用时含 `reason`；登记兼容映射的项另公开 `nativeMethod`、`compatibilityFallback` |
 
-Construct 事件表可使用 Call API、Read synchronous API、Subscribe / Unsubscribe to API event，也提供 toast、modal、存储、网络类型、剪贴板和键盘等快捷动作。插件实例先 Init，再等待 On ready。完整动作、tag 和结果表达式见 [插件说明](../addon/README.md)。缺少原生方法时明确报 `UNSUPPORTED`；用错调用种类时报 `WRONG_API_KIND`。
+Construct 事件表可使用 Call API、Read synchronous API、Subscribe / Unsubscribe to API event，也提供 toast、modal、存储、网络类型、剪贴板和键盘等快捷动作。插件实例先 Init，再等待 On ready。完整动作、tag 和结果表达式见 [插件说明](../addon/README.md)。原生方法及目录明确登记的备用方法均不可用时报告 `UNSUPPORTED`；用错调用种类时报 `WRONG_API_KIND`。
 
 `PLATFORM_API_CATALOG` 和 `PLATFORM_API_CATEGORIES` 从 runtime 模块导出，是本页表格的数据来源。目录只允许精确名称，不接受任意属性路径或未登记方法。
 
@@ -67,7 +67,7 @@ try {
 
 ## 配置与验证范围
 
-0.3.0 已在真实 Construct r495.2 编辑器重新导出，项目脚本与源码一致，微信 / 抖音 / TikTok 三端转换成功；本机回归 255 项通过、0 项失败。本轮微信 IDE 已验证启动、53 个入口和分类/返回导航，尚未运行新版自检或点击支付入口；TikTok IDE、真机和真实支付仍未验证。
+0.3.0 已在真实 Construct r495.2 编辑器重新导出，项目脚本与源码一致，微信 / 抖音 / TikTok 三端转换成功；发布时本机回归为 255 项通过、0 项失败。本轮微信 IDE 已验证启动、53 个入口和分类/返回导航，尚未运行新版自检或点击支付入口。后续 TikTok iOS 用户 fix4 截图显示 57 入口页面并进入本地存储分类，同时报告写入回读失败；这只提供部分渲染与导航证据，TikTok IDE、真机完整功能和真实支付仍待验收。
 
 | 功能 | 项目需要提供或验证 |
 | --- | --- |
@@ -88,7 +88,13 @@ try {
 
 ## TikTok Native 与支付
 
-TikTok 使用独立的 `TTMinis.game` 命名空间，不映射到抖音 `tt`。原生 runtime 无需 SDK init；插件 Init 只配置本项目桥接。TikTok 目录按官方分类文档核对；原生对象方法仍在返回对象上调用。当前没有 TikTok IDE、真机或真实支付验证。
+TikTok 使用独立的 `TTMinis.game` 命名空间，不映射到抖音 `tt`。原生 runtime 无需 SDK init；插件 Init 只配置本项目桥接。目录以官方分类文档为基础，另明确登记可检测的宿主扩展；原生对象方法仍在返回对象上调用。已有用户真机截图提供页面显示与分类导航证据，尚无 TikTok IDE、真机完整功能或真实支付验收。
+
+`getDeviceInfo` 是 `fix5` 新增的只读同步入口，元数据为 `documentation: "native-or-system-info-mapping"`、`syncFallback: "getSystemInfoSync"`。官方 [System](https://developers.tiktok.com/docs/en/mini-games-sdk-system) 页面当前只列 `getSystemInfoSync`、`getSystemInfo` 和 `getWindowInfo`，未列 `getDeviceInfo`，因此不宣称所有 SDK 版本原生提供后者。桥接优先调用 `TTMinis.game.getDeviceInfo`，仅当它缺失或不是函数时改用同平台官方 `TTMinis.game.getSystemInfoSync`；两者都不可用才返回 `UNSUPPORTED`。原生设备接口抛错时直接报告失败，不触发替代调用。
+
+两条路径均保留实际方法的原生接收对象、位置参数和返回对象，不复制或补造字段；系统信息返回值未包含的字段仍然缺失。`getCapabilities()` 对此项公开 `nativeMethod` 与 `compatibilityFallback`：直接调用时分别为 `"getDeviceInfo"` 和 `false`，兼容映射时为 `"getSystemInfoSync"` 和 `true`。能力查询只检测函数是否存在，不执行设备或系统信息读取。TikTok 登记数量因此从 59 增至 60，全局唯一名称数量不变。
+
+`fix5` 同时修正 TikTok localStorage / `runtime.storage` 点读：直接使用原生 `getStorageSync`，不再用 `getStorageInfoSync().keys` 作为读取前提。项目存储 `ready()` 不要求枚举接口；枚举、数量和清空仍依赖真实键列表并报告失败。localStorage 的合法空字符串保留，`null` / `undefined` 按缺失处理；项目存储使用非空版本化封装，原生空字符串也按缺失处理。该修复针对已复现的适配缺陷，用户手机的具体原始返回仍未知；`build=storage-device-5` 的手机存储与设备信息读取尚待复测。
 
 `pay` 使用后端创建的 `trade_order_id`。运行时 `bridge.pay` 返回客户端完成状态和 `fulfillment: "unconfirmed"`，不会发货；`pollPaymentOrder` 查询自己的已鉴权后端，超时保持 pending。服务器验签辅助不会代替订单校验、持久化幂等和发货事务。见 [IAP 接入说明](TIKTOK-IAP.md)。
 
@@ -98,7 +104,7 @@ TikTok 使用独立的 `TTMinis.game` 命名空间，不映射到抖音 `tt`。�
 
 | 分类 | 唯一名称 | 微信 | 抖音 | TikTok |
 | --- | ---: | ---: | ---: | ---: |
-| 系统信息 | 21 | 18 | 10 | 8 |
+| 系统信息 | 21 | 18 | 10 | 9 |
 | 生命周期 | 12 | 10 | 8 | 4 |
 | 渲染与字体 | 8 | 8 | 4 | 4 |
 | 触摸、键盘与鼠标 | 11 | 11 | 10 | 4 |
@@ -130,7 +136,7 @@ TikTok 使用独立的 `TTMinis.game` 命名空间，不映射到抖音 `tt`。�
 | 系统信息 | `getLaunchOptionsSync` | `sync` | `sync` | `sync` |
 | 系统信息 | `canIUse` | 未列入 | `sync` | `sync` |
 | 系统信息 | `getWindowInfo` | `sync` | 未列入 | `sync` |
-| 系统信息 | `getDeviceInfo` | `sync` | 未列入 | 未列入 |
+| 系统信息 | `getDeviceInfo` | `sync` | 未列入 | `sync`；优先原生，缺失时明确映射 `getSystemInfoSync` |
 | 系统信息 | `getAppBaseInfo` | `sync` | 未列入 | 未列入 |
 | 系统信息 | `getSystemSetting` | `sync` | 未列入 | 未列入 |
 | 系统信息 | `getAppAuthorizeSetting` | `sync` | 未列入 | 未列入 |

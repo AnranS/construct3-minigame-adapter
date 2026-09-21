@@ -101,6 +101,7 @@ export function getAPICatalog() {
     for (const platform of row.platforms) {
       const metadata = row.metadata[platform];
       const contract = [];
+      if (metadata.syncFallback) contract.push(`优先原生同名方法；缺失时映射 ${metadata.syncFallback}，返回实际结果`);
       if (metadata.offMode === 'all') contract.push('宿主取消接口影响全部监听；桥接仅停用自身回调');
       else if (metadata.offMode === 'none') contract.push('无原生撤销接口；桥接仅停用自身回调');
       else if (metadata.off) contract.push(`需 ${metadata.off} 撤销订阅`);
