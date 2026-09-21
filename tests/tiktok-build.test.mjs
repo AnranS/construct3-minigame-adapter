@@ -205,6 +205,37 @@ test('TikTok builds require explicit experimental acknowledgement even for plain
   await assert.rejects(fs.access(output), {code: 'ENOENT'});
 });
 
+test('TikTok packaged private async startup failures reject Ready even after Loaded succeeds', async t => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'c3-tiktok-startup-'));
+  t.after(() => fs.rm(temporary, {recursive: true, force: true}));
+  const input = path.join(temporary, 'input'), output = path.join(temporary, 'output');
+  await fs.mkdir(input);
+  await fs.writeFile(path.join(input, 'main.js'), `
+    self.RuntimeInterface = class {
+      constructor() { this.#begin(); }
+      async #begin() {
+        await new Promise(resolve => { self.releaseStartup = resolve; });
+        throw new Error('native canvas initialization failed');
+      }
+    };
+    new self.RuntimeInterface();
+  `);
+  const report = await convertProject({input, output, platform: 'tiktok', entry: 'main.js', experimental: true});
+  assert.ok(report.patches.some(patch => patch.observedStartupCalls === 1));
+  const f = nativeFixture(output), errors = [];
+  const context = vm.createContext({TTMinis: {game: f.api}, setTimeout, clearTimeout, queueMicrotask, URL,
+    console: {info() {}, warn() {}, error: message => errors.push(message)}});
+  vm.runInContext(await fs.readFile(path.join(output, 'game.js'), 'utf8'), context);
+  await context.__C3MiniGameLoaded;
+  assert.equal(context.__C3MiniGameStartup.getSnapshot().state, 'starting');
+  const rejected = assert.rejects(context.__C3MiniGameReady, /native canvas initialization failed/);
+  context.__C3MiniGameScope.releaseStartup();
+  await rejected;
+  assert.equal(context.__C3MiniGameStartup.getSnapshot().failure.stage, 'runtime-interface-init');
+  assert.equal(errors.filter(message => message.includes('STARTUP_FAILED')).length, 1);
+  await context.__C3MiniGameAdapter.dispose();
+});
+
 for (const onOnly of [false, true]) {
 test(`TikTok Native package executes lexical TTMinis.game bindings without wx/tt aliases or init (${onOnly ? 'missing off methods' : 'paired listeners'})`, {timeout: 15000}, async t => {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'c3-tiktok-build-'));

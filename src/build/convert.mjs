@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 import { inside, writeJSON } from './files.mjs';
 import { inspectProject } from './inspect.mjs';
-import { disableMainWorker, adaptConstructStorage } from './patch.mjs';
+import { disableMainWorker, adaptConstructStorage, observeConstructStartup } from './patch.mjs';
 import { engineScopeBuildOptions } from './engine-scope.mjs';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -146,37 +146,44 @@ import { createModuleLoader } from ${JSON.stringify(path.join(projectRoot, 'src/
 import { createWorkerCompatibility } from ${JSON.stringify(path.join(projectRoot, 'src/runtime/worker.js'))};
 import { createWasmCompatibility } from ${JSON.stringify(path.join(projectRoot, 'src/runtime/wasm.js'))};
 import { createRuntimeReadiness } from ${JSON.stringify(path.join(projectRoot, 'src/runtime/readiness.js'))};
+import { createStartupDiagnostics } from ${JSON.stringify(path.join(projectRoot, 'src/runtime/startup.js'))};
 import { createPlatformStorage } from ${JSON.stringify(path.join(projectRoot, 'src/runtime/storage.js'))};
 const modules = {${moduleLines.join(',\n')}};
 const workers = {${workerLines.join(',\n')}};
 const baseURL = 'https://c3-minigame.invalid/game/';
 globalThis.WebAssembly = createWasmCompatibility({nativeWebAssembly: globalThis.WebAssembly, platformWebAssembly: ${platformWasmExpression}, api: ${platformAPIExpression}, assetRoot: 'game', wasmFiles: ${JSON.stringify(inspection.files.filter(f => /\.wasm(?:\.br)?$/i.test(f)))}});
 const loader = createModuleLoader(modules, { baseURL });
-const adapter = installAdapter({ platform: ${JSON.stringify(platform)}, assetRoot: 'game', autoClaimMainCanvas: ${!inspection.format.startsWith('construct')}, loadScript: src => loader.load(src) });
+const adapter = installAdapter({ platform: ${JSON.stringify(platform)}, assetRoot: 'game', autoClaimMainCanvas: ${!inspection.format.startsWith('construct')}, loadScript: src => startup.run('script:' + loader.resolve(src), () => loader.load(src)) });
+const readiness = createRuntimeReadiness();
+const startup = createStartupDiagnostics({host: globalThis, readiness, platform: ${JSON.stringify(platform)}, waitMs: ${inspection.format.startsWith('construct') ? 15000 : 0}});
+globalThis.__C3MiniGameStartup = startup;
+__c3NativeHost.__C3MiniGameStartup = startup;
+const disposeAdapter = adapter.dispose.bind(adapter);
+adapter.dispose = () => { startup.dispose(); readiness.dispose(); return disposeAdapter(); };
 globalThis.__C3MiniGameStorage = createPlatformStorage({api: adapter.api});
-const workerCompat = createWorkerCompatibility(workers, { baseURL, globals: { fetch: globalThis.fetch, navigator: globalThis.navigator, console: globalThis.console } });
+const workerCompat = createWorkerCompatibility(workers, { baseURL, globals: { fetch: globalThis.fetch, navigator: globalThis.navigator, console: globalThis.console }, onError: error => { if (!startup.fail(error, 'worker')) console.error('[C3 MiniGame] Worker error:', error); } });
 globalThis.Worker = workerCompat.Worker;
 globalThis.MessageChannel = workerCompat.MessageChannel;
 globalThis.MessagePort = workerCompat.MessagePort;
 globalThis.__C3MiniGameAdapter = adapter;
 __c3NativeHost.__C3MiniGameAdapter = adapter;
-const readiness = createRuntimeReadiness();
 globalThis.__C3MiniGameReady = readiness.promise;
-readiness.promise.then(() => { console.info('[C3 MiniGame] Construct runtime-ready'); readiness.dispose(); }, () => { readiness.dispose(); });
+__c3NativeHost.__C3MiniGameReady = readiness.promise;
+readiness.promise.then(() => { startup.ready(); console.info('[C3 MiniGame] Construct runtime-ready'); readiness.dispose(); }, error => { startup.fail(error); startup.dispose(); readiness.dispose(); });
 globalThis.__C3MiniGameLoaded = (async () => {
   for (const entry of ${JSON.stringify(inspection.entries.map(e => e.path))}) {
     if (${JSON.stringify(inspection.bootstrapEntries)}.includes(entry)) {
       if (globalThis.C3_IsSupported !== true) throw new Error('Construct supportcheck rejected this host; inspect WebGL, WebAssembly and Intl support');
       adapter.claimMainCanvas();
     }
-    await loader.load(entry);
+    await startup.run('script:' + entry, () => loader.load(entry));
     readiness.attach(globalThis.RuntimeInterface);
   }
   document.dispatchEvent({ type: 'DOMContentLoaded' });
   globalThis.dispatchEvent?.(new globalThis.Event('load'));
   return adapter;
 })();
-globalThis.__C3MiniGameLoaded.catch(error => { readiness.reject(error); console.error('[C3 MiniGame] 入口加载失败:', error?.message || String(error)); });
+globalThis.__C3MiniGameLoaded.catch(error => { startup.fail(error, 'entry-load'); });
 __c3NativeHost.__C3MiniGameLoaded = globalThis.__C3MiniGameLoaded;
 `;
     const bootFile = path.join(scratch, 'entry.mjs');
@@ -206,8 +213,9 @@ __c3NativeHost.__C3MiniGameLoaded = globalThis.__C3MiniGameLoaded;
           const source = await fs.readFile(args.path, 'utf8');
           const patched = disableMainWorker(source);
           const storage = adaptConstructStorage(patched.code);
-          if (patched.count || storage.count) patchSummary.push({ file: path.relative(inspection.root, args.path), mainWorkerProperties: patched.count, nativeStorageAssignments: storage.count });
-          return { contents: storage.code, loader: 'js', resolveDir: path.dirname(args.path) };
+          const startup = observeConstructStartup(storage.code);
+          if (patched.count || storage.count || startup.count) patchSummary.push({ file: path.relative(inspection.root, args.path), mainWorkerProperties: patched.count, nativeStorageAssignments: storage.count, observedStartupCalls: startup.count });
+          return { contents: startup.code, loader: 'js', resolveDir: path.dirname(args.path) };
         });
       } }]
     });

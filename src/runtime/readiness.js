@@ -49,8 +49,16 @@ export function createRuntimeReadiness() {
       if (typeof descriptor?.value !== 'function') return false;
       const original = descriptor.value;
       function wrapper(...args) {
-        // Any synchronous error propagates unchanged; the startup owner can reject it.
-        const result = Reflect.apply(original, this, args);
+        let result;
+        try { result = Reflect.apply(original, this, args); }
+        catch (error) {
+          // DOM attachment runs inside this message handler. A thrown attachment
+          // error must reject readiness even when EventTarget only reports it.
+          // Other message failures do not decide whether startup has completed.
+          try { if (args[0]?.type === 'runtime-ready') reject(error); }
+          catch { /* A hostile message accessor must not replace the original error. */ }
+          throw error;
+        }
         try {
           if (args[0]?.type === 'runtime-ready') observe(result, this, args[0]);
         } catch (error) {

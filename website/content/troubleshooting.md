@@ -130,10 +130,28 @@ node src/cli.mjs inspect --input ./exports/my-game
 
 已通过缺失 off 接口的启动、窗口更新、释放、重装和完整打包夹具回归；修复后的 TikTok 真机首帧仍待验证。原生接口范围请分别参考 TikTok 官方 [Event](https://developers.tiktok.com/docs/en/mini-games-sdk-event) 和 [Device and Network](https://developers.tiktok.com/docs/en/mini-games-sdk-device-and-network)，不要从微信或抖音同名方法推断。
 
+## TikTok 灰屏，最后只有 secure context 警告
+
+2026-09-21 的 TikTok iOS 用户反馈：`fix1` 不再出现 `offWindowResize` 异常，但游戏仍灰屏，最后一条游戏相关日志是 Construct 的 `not a secure context` 警告，Error 页为空。当前尚未确认灰屏根因，也没有修复后的真机首帧通过记录。
+
+这条警告本身不会中止 Construct 启动。已确认的诊断缺口是：Construct 构造器发起异步初始化后立即返回，初始化 Promise 的后续错误可能绕过 `__C3MiniGameLoaded` 的入口加载错误捕获。因此 Error 页为空，仍可能有尚未暴露的初始化失败或等待。
+
+换用含启动诊断的新包并完整重新启动，等待至少 15 秒，然后查看以下日志：
+
+| 日志 | 含义与下一步 |
+| --- | --- |
+| `STARTUP_FAILED` | 已观察到实际初始化异常。提供完整日志及之前的阶段记录，以定位失败位置 |
+| `STARTUP_WAIT` | 15 秒后仍未收到真实 ready。提供其中的 pending、history 及后续日志；该提示不终止慢启动，也不表示已经失败 |
+| `[C3 MiniGame] Construct runtime-ready` | 实际就绪消息已处理，继续检查首帧、输入和后续错误 |
+
+新诊断记录 worker 创建、任务调度器、runtime 创建与初始化、项目数据、Canvas、WebGL 及包内资源读取阶段。它保留安全上下文警告，不通过屏蔽警告或伪造 ready 让测试看起来成功。可选资源读取失败不会单独将启动判为失败，远程业务 URL 不进入诊断日志。
+
+如果灰屏时两种诊断日志都没有出现，保留启动日志并确认当前运行的是新包。反馈时附上 TikTok 客户端版本和设备信息；目前这一步用于取得具体失败阶段，不能当作灰屏已经修复。完整记录见[验证记录](../validation/)。
+
 ## TikTok 检测不到宿主或支付没有发货
 
 确认运行目标为 TikTok Native Mini Games，并选择 `tiktok` 平台。TikTok 的命名空间是 `TTMinis.game`，不能把抖音 `tt` 注入或重命名来模拟通过。原生 runtime 不需要 `TTMinis.game.init()`；HTML runtime 的 SDK 加载流程不适用于原生转换产物。
 
 同名 API 也需要看目录中 TikTok 的独立契约。当前未登记的顶层方法不会自动透传；文件管理器、音频或 SocketTask 上的方法需要在返回对象上调用。
 
-支付的客户端 success / complete 不代表订单已确认或已发货。检查自己的服务器是否收到 Webhook、使用原始请求体验签、验证商户和环境、幂等更新订单，再检查客户端查询的是自己的已鉴权订单接口。轮询超时保持 pending，不自动认定失败或再次扣款；用户取消或失败后重新购买需创建新订单。见 [TikTok 支付接入](../tiktok-iap/)。本项目尚无 TikTok IDE、真机或真实支付验证。
+支付的客户端 success / complete 不代表订单已确认或已发货。检查自己的服务器是否收到 Webhook、使用原始请求体验签、验证商户和环境、幂等更新订单，再检查客户端查询的是自己的已鉴权订单接口。轮询超时保持 pending，不自动认定失败或再次扣款；用户取消或失败后重新购买需创建新订单。见 [TikTok 支付接入](../tiktok-iap/)。本项目尚无 TikTok IDE、真机或真实支付的通过记录；已有 TikTok iOS 用户真机启动失败报告，见上面的启动排查记录。

@@ -175,7 +175,7 @@ globalThis.__fixtureProjectStorage = localforage.createInstance({name: 'fixture-
     assert.equal(context.__fixtureRuntime, undefined);
     assert.equal(context.RuntimeInterface, undefined);
     assert.equal(context.C3_SetInitFunctions, undefined);
-    assert.deepEqual(Reflect.ownKeys(context).filter(key => !beforeKeys.has(key)).sort(), ['__C3MiniGameAdapter', '__C3MiniGameLoaded', '__C3MiniGameScope']);
+    assert.deepEqual(Reflect.ownKeys(context).filter(key => !beforeKeys.has(key)).sort(), ['__C3MiniGameAdapter', '__C3MiniGameLoaded', '__C3MiniGameReady', '__C3MiniGameScope', '__C3MiniGameStartup']);
     assert.deepEqual(errors, []);
     await context.__C3MiniGameAdapter.dispose();
     assert.equal(context.document, nativeDocument);

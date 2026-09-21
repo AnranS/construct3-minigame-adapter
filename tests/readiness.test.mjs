@@ -58,16 +58,50 @@ test('unavailable, accessor and immutable methods cannot produce false readiness
   readiness.dispose();
 });
 
-test('original errors propagate identically and startup failures can reject readiness explicitly', async () => {
+test('synchronous runtime-ready attachment errors reject readiness and propagate identically', async () => {
   const failure = new Error('DOM attachment failed');
   class RuntimeInterface { _OnMessageFromRuntime() { throw failure; } }
   const readiness = createRuntimeReadiness();
   readiness.attach(RuntimeInterface);
   let resolved = false;
   readiness.promise.then(() => { resolved = true; }, () => {});
+  const rejected = assert.rejects(readiness.promise, error => error === failure);
   assert.throws(() => new RuntimeInterface()._OnMessageFromRuntime({type: 'runtime-ready'}), error => error === failure);
-  await flushMicrotasks();
+  await rejected;
   assert.equal(resolved, false);
+  readiness.dispose();
+});
+
+test('other message failures preserve their exceptions and promises without rejecting readiness', async () => {
+  const syncFailure = new Error('unrelated synchronous message failed');
+  const asyncFailure = new Error('unrelated asynchronous message failed');
+  let processing;
+  class RuntimeInterface {
+    _OnMessageFromRuntime(message) {
+      if (message.type === 'event') throw syncFailure;
+      if (message.type === 'result') return processing;
+      return 'attached';
+    }
+  }
+  const readiness = createRuntimeReadiness();
+  readiness.attach(RuntimeInterface);
+  let settled = false;
+  readiness.promise.then(() => { settled = true; }, () => { settled = true; });
+  const instance = new RuntimeInterface();
+  assert.throws(() => instance._OnMessageFromRuntime({type: 'event'}), error => error === syncFailure);
+  processing = Promise.reject(asyncFailure);
+  assert.equal(instance._OnMessageFromRuntime({type: 'result'}), processing);
+  await assert.rejects(processing, error => error === asyncFailure);
+  await flushMicrotasks();
+  assert.equal(settled, false);
+  assert.equal(instance._OnMessageFromRuntime({type: 'runtime-ready'}), 'attached');
+  assert.equal((await readiness.promise).runtimeInterface, instance);
+  readiness.dispose();
+});
+
+test('startup owners can still reject readiness explicitly before a runtime-ready message', async () => {
+  const readiness = createRuntimeReadiness();
+  const failure = new Error('entry loading failed');
   const rejected = assert.rejects(readiness.promise, error => error === failure);
   readiness.reject(failure);
   await rejected;
